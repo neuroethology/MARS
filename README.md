@@ -26,4 +26,4 @@ Installation of MARS can be managed via either a conda environment or a Docker c
 
 
 #### Step-by-step instructions for installing the MARS Docker
-Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Step-by-step instructions can be found [here](README_docker.md).
+Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Step-by-step instructions can be found [here](https://github.com/neuroethology/MARS/blob/master/README_Docker.md).
