@@ -1,0 +1,39 @@
+Last version: 1.8
+LOG History version changes:
+
+GUI/QoL
+1.6beta- Uses a new default style for Qt.
+1.6beta- Added a 'global' progress bar, below the pose progress bar.
+1.6beta- Colored Overwrite button background.
+1.6beta- Now includes a note for number of videos processed, and the number left.
+1.6beta- Updated mtih.dump_bento to dump w/ relative filenames again. --Whole directory dumps coming soon.
+1.6beta- Videos are now extracted in order.
+1.6beta- Now resizes the GUI to be a standard size after clearing the console.
+1.6beta- bugfix: No longer displays output for the same video twice.
+1.6- Now includes out-of-the-box video creation.
+1.6- The active progress bar now tracks video creation and pose estimation.
+1.6- Progress bars are now labelled.
+1.6- The directory opener now begins from where you left off.
+1.6delta- New window feature extraction method that's much faster.
+1.6delta- bugfix: Fixed bug in window feature extraction.
+1.6delta- Active progress bar now tracks feature extraction.
+1.7- Dump bento of multiple files
+1.7- Able to laod .annot behavior annotation in seqIo
+1.7- Now working also for front view only. For classifying action you always the top view
+1.7- Added utilities to rename project folder from old version to the last one
+1-7- Made MARS executable, no need to open terminal to execute the program, log of execution saved in MARS_v_7.log
+1-8- Created mars-docker for easier deployment.
+
+CLASSIFIERS/PERFORMANCE
+1.6beta- Addition of "Top w/ front pixel change" as an option for classification.
+1.6beta- Added interaction classifier to the second channel of prediction txt file
+1.6beta- Now includes JAABA-like window features, with corresponding boosts in performance.
+1.6beta- IMPORTANT:Removed Top+Front Classification --it's uniformly worse than Top w/ window features.
+1.6beta- IMPORTANT: Front pose is thus no longer used for classification.
+1.6- Now includes an interaction classifier, which is dumped into channel 2.
+1.7- scaler and classifier are loaded with joblib
+
+FEATURE EXTRACTION
+1.7- now features are saved as compressed binary file .npz.
+1.7- features name of windowed features are reformatted.
+

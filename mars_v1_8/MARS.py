@@ -1,0 +1,271 @@
+import sys, os
+from multiprocessing import Queue
+import time
+import argparse
+import MARS_pose_extractor as mpe
+import MARS_feature_extractor as mfe
+import MARS_classification_extractor as mce
+import MARS_classification_machinery as mcm
+import MARS_output_format as mof
+import MARS_create_video as mcv
+import numpy as np
+
+
+def get_mars_default_options():
+    default_opts = {'doPose': True,
+                    'doFeats': True,
+                    'doActions': True,
+                    'doVideo': True,
+                    'doOverwrite': True,
+                    'doFront': False,
+                    'doTop': True,
+                    'doToppcf': False,
+                    'useExistingBBoxes': False,
+                    'bboxType': '',
+                    'black_detector_front': 'models/detection/MARS_front_detection_black.pb',
+                    'white_detector_front': 'models/detection/MARS_front_detection_white.pb',
+                    'black_detector_top': 'models/detection/MARS_top_detection_black.pb',
+                    'white_detector_top': 'models/detection/MARS_top_detection_white.pb',
+                    'front_pose_model': 'models/pose/MARS_front_pose.pb',
+                    'top_pose_model': 'models/pose/MARS_top_pose.pb',
+                    'verbose': 1,
+                    }
+    return default_opts
+
+
+def parse_opts(user_input):
+    # fill in missing options with default values
+    opts = get_mars_default_options()
+    for f in opts.keys():
+        opts[f] = user_input[f] if f in user_input.keys() else opts[f]
+
+    return opts
+
+
+def walk_current_folder(root_path, mars_opts):
+
+    trials_to_run = []
+    fullpaths = []
+    for path, subdirs, filenames in os.walk(root_path):
+        for numv, fname in enumerate(filenames):
+
+            # start by looping over all movie files that have "Top" in their name
+            cond1 = all(x not in fname for x in ['.seq', '.avi', '.mpg'])
+            cond2 = 'skipped' in path
+            cond3 = 'Top' not in fname
+            if cond1 | cond2 | cond3:
+                continue
+
+            if 'Top' in fname:
+                front_fname, top_fname, mouse_name = mof.get_names(fname)
+                if top_fname != fname: continue
+                fullpath_to_front = os.path.join(path, front_fname)
+                fullpath_to_top = os.path.join(path, top_fname)
+                cond1 = not (os.path.exists(fullpath_to_front))
+                cond2 = mars_opts['doFront']
+                cond3 = not mars_opts['doTop']
+                cond4 = not mars_opts['doToppcf']
+                # If the front video doesn't exist and we need it, continue.
+                if (cond1 and cond2):  # |(cond3 and cond4):
+                    continue
+            elif 'Front' in fname:
+                front_fname = fname
+                front_fname, top_fname, mouse_name = mof.get_names(front_fname)
+                # if front_fname != fname: continue
+                fullpath_to_top = os.path.join(path, top_fname)
+                fullpath_to_front = os.path.join(path, front_fname)
+                cond1 = not (os.path.exists(fullpath_to_top))
+                cond2 = mars_opts['doTop']
+                cond3 = not mars_opts['doFront']
+                cond4 = not mars_opts['doToppcf']
+
+                if (cond1 and cond2 and cond4) | cond3:
+                    continue
+            else:
+                # This is a movie file, but doesnt have "Top" or "Front" in it. Let's skip it.
+                continue
+
+            # Save the paths we want to use.
+            mouse_trial = dict()
+            mouse_trial['top'] = fullpath_to_top
+            mouse_trial['front'] = fullpath_to_front
+            trials_to_run.append(mouse_trial)
+            fullpaths.append(fullpath_to_top)
+
+    return trials_to_run, fullpaths
+
+
+def run_MARS(folders, user_opts={}):
+
+    mars_opts = parse_opts(user_opts)
+    
+    # Get the queue of directory paths we'll start from.
+    queue = Queue()
+    for fid in folders:
+        queue.put(fid)
+    time.sleep(0.1) # let the queue finish building
+
+    root_count = 0 # A counter for the number of paths we've processed.
+    while not (queue.empty()):
+
+        # Get the next path.
+        root_path = queue.get()
+
+        # Walk through the subdirectories and get trials to process.
+        print("Processing root path " + str(root_count) + " : " + root_path + "\n")
+        trials_to_run, fullpaths = walk_current_folder(root_path, mars_opts)
+
+        # Get the indices to sort the trials by.
+        idxs = np.argsort(fullpaths)
+
+        # Sort the trials.
+        placeholder = [trials_to_run[idx] for idx in idxs]
+        trials_to_run = placeholder
+
+        # Get the number of videos we're going to process, to give people an impression of time.
+        total_valid_videos = len(trials_to_run)
+        print('found %d valid videos for analysis.' % total_valid_videos)
+
+        videos_processed = 0
+        for trial in trials_to_run:
+            try:
+                fullpath_to_top = trial['top']
+                fullpath_to_front = trial['front']
+
+                top_fname = os.path.basename(fullpath_to_top)
+                front_fname = os.path.basename(fullpath_to_front)
+
+                cumulative_progress = ' '.join([" |",str(videos_processed + 1),"out of",str(total_valid_videos), "total videos"])
+                print('Processing ' + top_fname + cumulative_progress + ' \n')
+
+                if mars_opts['doPose']:
+
+                    if mars_opts['doFront']:
+                        print("   Extracting front pose from " + front_fname + "...")
+                        mpe.extract_pose_wrapper(video_fullpath=fullpath_to_front,
+                                                 view= 'front',
+                                                 doOverwrite = mars_opts['doOverwrite'],
+                                                 progress_bar_signal = [],
+                                                 mars_opts = mars_opts,
+                                                 verbose=mars_opts['verbose'])
+                        print("saved.\n")
+
+                    if mars_opts['doTop'] or mars_opts['doToppcf']:
+                        print("   Extracting top pose from " + top_fname + "...")
+                        mpe.extract_pose_wrapper(video_fullpath = fullpath_to_top,
+                                                 view = 'top',
+                                                 doOverwrite = mars_opts['doOverwrite'],
+                                                 progress_bar_signal = [],
+                                                 mars_opts=mars_opts,
+                                                 verbose=mars_opts['verbose'])
+                        print('   saved.')
+
+                    if not (mars_opts['doFront']|mars_opts['doTop']|mars_opts['doToppcf']):
+                        print("ERROR: You need to select at least one view to use.")
+
+
+                if mars_opts['doFeats']:
+                    # If we wanted to do something special with the Front and Top views, we'd do it here.
+                    # if mars_opts['doFront'] and mars_opts['doTop']:
+                    #     print('Extracting features...')
+                    #
+                    #     # Extract the features.
+                    #     mfe.extract_both_features_wrapper(top_video_fullpath = fullpath_to_top,
+                    #                                     front_video_fullpath = fullpath_to_front,
+                    #                                     doOverwrite = mars_opts['doOverwrite'],
+                    #                                     output_suffix='')
+                    if mars_opts['doTop']:
+                        print('   Extracting top features from ' + top_fname + '...')
+                        mfe.extract_top_features_wrapper(top_video_fullpath = fullpath_to_top,
+                                                        doOverwrite = mars_opts['doOverwrite'],
+                                                        progress_bar_sig = [],
+                                                        output_suffix = '')
+                        print('   saved.')
+
+                    if mars_opts['doToppcf']:
+                        print('Extracting top pcf features from '+ top_fname + '...')
+                        mfe.extract_top_pcf_features_wrapper(top_video_fullpath = fullpath_to_top,
+                                                            front_video_fullpath = fullpath_to_front,
+                                                            doOverwrite = mars_opts['doOverwrite'],
+                                                            progress_bar_sig = [],
+                                                            output_suffix = '')
+                        print('   saved.')
+
+                    if mars_opts['doFront']:
+                        print('Extracting front features from '+ front_fname + '...')
+                        mfe.extract_front_features_wrapper(top_video_fullpath = fullpath_to_top,
+                                                        front_video_fullpath = fullpath_to_front,
+                                                        doOverwrite = mars_opts['doOverwrite'],
+                                                        progress_bar_sig = [],
+                                                        output_suffix = '')
+                        print('   saved.')
+
+                    if not (mars_opts['doTop'] | mars_opts['doToppcf']):
+                        print('Warning: You need to include a top view to use the classifier later.')
+
+
+                if mars_opts['doActions']:
+                    print('Predicting actions from ' + top_fname + '...')
+                    if mars_opts['doToppcf']:
+                        # TODO: Don't hardcode this maybe?
+                        classifier_type='top_pcf_tm_xgb500_wnd'
+
+                        mce.classify_actions_wrapper(top_video_fullpath = fullpath_to_top,
+                                                     front_video_fullpath = '',
+                                                     doOverwrite = mars_opts['doOverwrite'],
+                                                     view = 'toppcf',
+                                                     classifier_path = 'models/classifier/' + classifier_type)
+                        print('   saved.')
+
+                    if mars_opts['doTop']:
+                        # TODO: Don't hardcode this maybe?
+                        classifier_type='top_tm_xgb500_wnd'
+
+                        mce.classify_actions_wrapper(top_video_fullpath = fullpath_to_top,
+                                                        front_video_fullpath = '',
+                                                        doOverwrite = mars_opts['doOverwrite'],
+                                                        view='top',
+                                                        classifier_path='models/classifier/' + classifier_type)
+                        print('   saved.')
+                        
+                    if not mars_opts['doTop'] and not mars_opts['doToppcf']:
+                        print("ERROR: You need to select a top view to use classifiers.")
+                        
+                    mcm.dump_bento(video_fullpath=fullpath_to_top,
+                                   basepath=root_path)
+
+                if mars_opts['doVideo']:
+                    if not (mars_opts['doFront'] | mars_opts['doTop'] | mars_opts['doToppcf']):
+                        print("ERROR: You need to select a view.")
+                    else:
+                        # TODO: Don't hardcode this maybe?
+                        classifier_type='top_pcf_tm_xgb500_wnd' if mars_opts['doToppcf'] else 'top_tm_xgb500_wnd'
+
+                        print('   Creating results video for ' + top_fname + '...')
+                        mcv.create_video_results_wrapper(top_video_fullpath = fullpath_to_top,
+                                                         classifier_path = 'models/classifier/' + classifier_type,
+                                                         doOverwrite = mars_opts['doOverwrite'],
+                                                         progress_bar_signal = [],
+                                                         view = 'top')
+                        print('   saved.')
+
+                videos_processed += 1
+
+            except Exception as e:
+                print(e)
+                continue
+                # End of try-except block
+            # End of particular fname
+        # End of the particular root_path
+        root_count += 1
+    # End of the queue while loop
+
+    print('Finished processing all the data in the queue!')
+    return
+
+if __name__ ==  '__main__':
+    # parser = argparse.ArgumentParser(description='MARS command line', prog='mars')
+    #TODO: figure out how to handle user options
+    # parser.add_argument('folders', type=str, help="sequence of folders")
+
+    run_MARS(sys.argv[1:])
