@@ -52,11 +52,11 @@ def walk_current_folder(root_path, mars_opts):
             # start by looping over all movie files that have "Top" in their name
             cond1 = all(x not in fname for x in ['.seq', '.avi', '.mpg'])
             cond2 = 'skipped' in path
-            cond3 = 'Top' not in fname
+            cond3 = 'Top' not in fname and '_t.seq' not in fname
             if cond1 | cond2 | cond3:
                 continue
 
-            if 'Top' in fname:
+            if 'Top' in fname or '_t.seq' in fname:
                 front_fname, top_fname, mouse_name = mof.get_names(fname)
                 if top_fname != fname: continue
                 fullpath_to_front = os.path.join(path, front_fname)

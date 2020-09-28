@@ -9,9 +9,9 @@ def get_names(video_name):
     elif ('Top.seq' in video_name):
         mouse_name = video_name[:-8]
     elif ('_s.seq' in video_name):
-        mouse_name = video_name[:-7]
+        mouse_name = video_name[:-6]
     elif ('_t.seq' in video_name):
-        mouse_name = video_name[:-7]
+        mouse_name = video_name[:-6]
     elif ('Top.avi' in video_name):
         mouse_name = video_name[:-8]
     elif ('Top.mpg' in video_name):
