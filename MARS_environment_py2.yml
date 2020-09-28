@@ -1,4 +1,4 @@
-name: mars_tf
+name: mars
 channels:
   - anaconda
   - conda-forge

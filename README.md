@@ -15,14 +15,14 @@ Installation of MARS can be managed via either a conda environment or a Docker c
      sh ./Miniconda3-latest-Linux-x86_64.sh
      ```
     then following the install instructions. Check your install by opening a new terminal and typing `which python`. This should return something like `~/miniconda3/bin/python`.
-  
+
 2) Clone or download the contents of this GitHub repository.
- 
+
 3) Build the MARS conda environment by navigating to your local copy of the MARS GitHub repository and calling
     ```
-    conda env create -f MARS_environment.yml
+    conda env create -f MARS_environment_py2.yml
     ```
-    Once the build has finished, you can activate the MARS environment by calling `conda activate mars_tf` (on some systems instead use `system activate mars_tf`).
+    Once the build has finished, you can activate the MARS environment by calling `conda activate mars` (or `system activate mars`).
 
 
 #### Step-by-step instructions for installing the MARS Docker
