@@ -1,6 +1,7 @@
 ### MARS installation instructions
 
 >**Environment: Windows**
+>
 >**GPU: NVIDIA**
 
 
