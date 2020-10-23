@@ -15,7 +15,7 @@ import pickle
 
 class ImportGraphDetection():
     """ Convenience class for setting up the detector and using it."""
-    def __init__(self, quant_model):
+    def __init__(self, quant_model, gpu_to_try):
         self.use_ml_model = False
 
         if False and platform.system() == 'Darwin':
@@ -51,7 +51,12 @@ class ImportGraphDetection():
                 gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.30))
 
             # Create the Session we will use to execute the model.
-            self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
+            devices = tf.compat.v1.config.experimental.list_physical_devices('GPU')
+            print(devices)
+            device_name = '/device:GPU:' + str(gpu_to_try)
+            print(f"ImportGraphDetection: trying to use GPU device {device_name}")
+            with tf.device(device_name):
+                self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
 
             # Give object access to the input and output nodes.
             self.input_op = self.graph.get_operation_by_name('images')
@@ -74,7 +79,7 @@ class ImportGraphDetection():
 
 class ImportGraphPose():
     """ Convenience class for setting up the pose estimator and using it."""
-    def __init__(self, quant_model):
+    def __init__(self, quant_model, gpu_to_try):
         quant_model_stem, _ = os.path.splitext(quant_model)
         self.use_ml_model = False
 
@@ -108,7 +113,10 @@ class ImportGraphPose():
                 # gpu_options=tf.GPUOptions(allow_growth=True))
                 gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.45))
 
-            self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
+            device_name = '/device:GPU:' + str(gpu_to_try)
+            print(f"ImportGraphPose: trying to use GPU device {device_name}")
+            with tf.device(device_name):
+                self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
 
             # access to input and output nodes
             self.input_op = self.graph.get_operation_by_name('images')
@@ -390,7 +398,7 @@ def pre_det(q_in, q_out_predet, q_out_raw, IM_TOP_H, IM_TOP_W):
         print(e)
         raise(e)
 
-def run_det_setup(view, opts):
+def run_det_setup(view, opts, gpu_to_try):
     """ setup for run_det """
     if not opts['useExistingBBoxes']:
         if view == 'front':
@@ -401,8 +409,8 @@ def run_det_setup(view, opts):
             QUANT_DET_W_PATH = opts['white_detector_top']
 
         # Import the detection networks.
-        det_black = ImportGraphDetection(QUANT_DET_B_PATH)
-        det_white = ImportGraphDetection(QUANT_DET_W_PATH)
+        det_black = ImportGraphDetection(QUANT_DET_B_PATH, gpu_to_try)
+        det_white = ImportGraphDetection(QUANT_DET_W_PATH, gpu_to_try)
 
         return det_black, det_white
 
@@ -418,7 +426,7 @@ def run_det_inner(input_data, det_model, opts):
         # Package the output up.
         return [locations, confidences]
 
-def run_det(q_in,q_out, view, opts):
+def run_det(q_in,q_out, view, opts, gpu_to_try):
     """ Worker function that houses and runs the bounding box detection network. If the user provided their own
     bounding boxes, we just pass them along to the next stage of the queue.
     q_in: from pre-det, the detection pre-processing function.
@@ -426,7 +434,7 @@ def run_det(q_in,q_out, view, opts):
     q_out: to post-det, the detection post-processing function."""
     try:
         # Decide on which view to use.
-        det_black, det_white = run_det_setup(view, opts)
+        det_black, det_white = run_det_setup(view, opts, gpu_to_try)
 
         while True:
             # Get the input image.
@@ -557,7 +565,7 @@ def pre_hm(q_in_det, q_in_image, q_out_img, q_out_bbox, IM_W, IM_H):
         raise(e)
 
 
-def run_hm_setup(view, opts):
+def run_hm_setup(view, opts, gpu_to_try):
     # Figure out which view we're using.
     if view == 'front':
         QUANT_POSE = opts['front_pose_model']
@@ -565,20 +573,20 @@ def run_hm_setup(view, opts):
         QUANT_POSE = opts['top_pose_model']
 
     # Import the pose model.
-    return ImportGraphPose(QUANT_POSE)
+    return ImportGraphPose(QUANT_POSE, gpu_to_try)
 
 def run_hm_inner(prepped_images, pose_model):
     # Run the pose estimation network.
     return pose_model.run(prepped_images)
 
 
-def run_hm(q_in_img, q_out_hm, view, opts):
+def run_hm(q_in_img, q_out_hm, view, opts, gpu_to_try):
     """ Worker function that performs the pose-estimation.
     q_in_img: from pre_hm, contains the images cropped and resized for inference.
 
     q_out_hm: to post_hm, contains the heatmaps."""
     try:
-        pose_model = run_hm_setup(view, opts)
+        pose_model = run_hm_setup(view, opts, gpu_to_try)
         while True:
             # Collect the prepared images for inference.
             prepped_images = q_in_img.get()

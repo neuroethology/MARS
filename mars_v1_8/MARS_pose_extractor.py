@@ -96,9 +96,9 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 IM_H = vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
                 IM_W = vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
 
-            """
+            # """
             NUM_FRAMES = min(NUM_FRAMES, 1024)
-            """
+            # """
 
             # unpack user-provided bounding boxes if they exist:
             bboxes = [None] * NUM_FRAMES
@@ -115,6 +115,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 if verbose:
                     print("      Creating pool...")
 
+                num_gpus = len(tf.config.experimental.list_physical_devices('GPU'))
                 # we need at least 8 workers to manage the queue:
                 # if mp.cpu_count() > 8:
                 #     workers_to_use = mp.cpu_count()
@@ -153,7 +154,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                                                         IM_H, IM_W))
                     results_det = pool.apply_async(run_det,
                                                 (q_predet_to_det,q_det_to_postdet,
-                                                    view, mars_opts))
+                                                    view, mars_opts, min(0, num_gpus-1)))
                     results_postdet = pool.apply_async(post_det,
                                                     (q_det_to_postdet, q_postdet_to_prehm))
                     results_prehm = pool.apply_async(pre_hm,
@@ -162,7 +163,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                                                     IM_W, IM_H))
                     results_hm = pool.apply_async(run_hm,
                                                 (q_prehm_to_hm_IMG,q_hm_to_posthm_HM,
-                                                view, mars_opts))
+                                                view, mars_opts, min(1, num_gpus-1)))
                     results_posthm = pool.apply_async(post_hm,
                                                         (q_hm_to_posthm_HM,q_prehm_to_posthm_BBOX,
                                                         IM_W, IM_H,POSE_IM_SIZE,NUM_FRAMES,pose_basename))
