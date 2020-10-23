@@ -50,6 +50,6 @@ Once the build has finished, you can activate the MARS environment by calling `c
 ## Downloading the trained MARS models
 Before you can run MARS, you need to download the trained neural networks and classifiers MARS uses for pose estimation and behavior classification.
 
-Models can be downloaded from [https://data.caltech.edu/records/1655](https://data.caltech.edu/records/1655). After downloading, unzip the folder and copy it into `MARS/mars_v1_8/models`. The contents of `MARS/mars_v1_8/models` should now be three directories called `classifier`, `detection`, and `pose`.
+Models can be downloaded from [https://data.caltech.edu/records/1655](https://data.caltech.edu/records/1655). After downloading, unzip the `models` folder into the `MARS/mars_v1_8` directory. The contents of `MARS/mars_v1_8/models` should now be three directories called `classifier`, `detection`, and `pose`.
 
 Now you're ready to classify some behaviors!
