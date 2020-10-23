@@ -8,18 +8,29 @@ import cv2
 import progressbar
 import platform
 
-if False and platform.system() == 'Darwin':
-    import coremltools as cmt
 import os
 import pickle
+
+def get_macOS_version_info():
+    if platform.system() != "Darwin":
+        return (0, 0, 0)
+    return tuple(map(int, platform.mac_ver()[0].split('.')))
+
+major, minor, _ = get_macOS_version_info()
+if major == 10 and minor >= 15:
+    import coremltools as cmt
+    use_coreml = True
+else:
+    use_coreml = False
 
 class ImportGraphDetection():
     """ Convenience class for setting up the detector and using it."""
     def __init__(self, quant_model, gpu_to_try):
         self.use_ml_model = False
 
-        if False and platform.system() == 'Darwin':
-        # First, try to read an existing mlmodel
+        if use_coreml:
+            # we're running on a Mac with at least MacOS Catalina, so use MLModel
+            # First, try to read an existing mlmodel
             quant_model_stem, _ = os.path.splitext(quant_model)
             self.ml_model_path = quant_model_stem + '.mlmodel'
             if os.path.exists(self.ml_model_path):
@@ -69,9 +80,11 @@ class ImportGraphDetection():
     def run(self, input_image):
         ''' This method is what actually runs an image through the Multibox network.'''
         if self.use_ml_model:
+            if True and platform.system() == 'Darwin':
+                import coremltools
             if not self.ml_model:
                 # delay loading the model until we're in the correct thread
-                self.ml_model = cmt.models.MLModel(self.ml_model_path)
+                self.ml_model = coremltools.models.MLModel(self.ml_model_path)
             predictions = self.ml_model.predict({'images': input_image})
             return predictions['predicted_locations'], predictions['Multibox/Sigmoid']
         return self.sess.run([self.output_tensor_loc, self.output_tensor_conf], {self.input_tensor: input_image})
@@ -83,7 +96,7 @@ class ImportGraphPose():
         quant_model_stem, _ = os.path.splitext(quant_model)
         self.use_ml_model = False
 
-        if False and platform.system() == 'Darwin': # use Mac-native GPU if possible
+        if use_coreml: # on MacOS Catalina; use Mac-native GPU if possible
             self.ml_model_path = quant_model_stem + '.mlmodel'
             if os.path.exists(self.ml_model_path):
                 # Use an existing .mlmodel file
@@ -121,19 +134,20 @@ class ImportGraphPose():
             # access to input and output nodes
             self.input_op = self.graph.get_operation_by_name('images')
             self.input_tensor = self.input_op.outputs[0]
-            self.output_op_heatmaps = self.graph.get_operation_by_name('HourGlass/Conv_30/BiasAdd')
+            self.output_op_heatmaps = self.graph.get_operation_by_name('output_heatmaps')
             self.output_tensor_heatmaps = self.output_op_heatmaps.outputs[0]
 
     def run(self, cropped_images):
         """ This method is what actually runs an image through the stacked hourglass network."""
         if self.use_ml_model:
+            if True and platform.system() == 'Darwin':
+                import coremltools
             if not self.ml_model:
                 # delay loading the model until we're in the correct thread
-                self.ml_model = cmt.models.MLModel(self.ml_model_path)
+                self.ml_model = coremltools.models.MLModel(self.ml_model_path)
             predictions = self.ml_model.predict({'images': cropped_images})
             # wrap return value in list to match TF behavior
-            return [predictions['HourGlass/Conv_30/BiasAdd']]
-            # return [predictions['HourGlass/Conv_14/BiasAdd']]
+            return [predictions['output_heatmaps']]
         return self.sess.run([self.output_tensor_heatmaps], {self.input_tensor: cropped_images})
 
 
@@ -674,3 +688,82 @@ def post_hm(q_in_hm, q_in_bbox, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, POSE_BASEN
         print("\nerror occurred during pose post-processing (function MARS_pose_machinery.post_hm)")
         print(e)
         raise(e)
+
+def run_gpu(q_in_det, q_out_det, q_in_hm, q_out_hm, view, opts, queue_size):
+    do_det = True
+    do_hm = True
+    BATCH_SIZE = min(queue_size, 16)
+    print("\n\nIn run_gpu\n\n")
+    try:
+        # Decide on which view to use.
+        det_black, det_white = run_det_setup(view, opts)
+        pose_model = run_hm_setup(view, opts)
+    except Exception as e:
+        print("\nError occurred during loading of models")
+        print(e)
+        q_out_det.put(POISON_PILL)
+        q_out_hm.put(POISON_PILL)
+        raise e
+
+    while do_det or do_hm:
+        if do_det:
+            for item in range(BATCH_SIZE):
+                try:
+                    # Get the input image.
+                    if q_in_det.empty():
+                        print("q_in_det is empty")
+                        break
+                    print('trying to get from q_in_det')
+                    input_data = q_in_det.get(False)
+                    print('got det')
+                except Exception as e:
+                    print(f'unexpected exception trying to get from q_in_det: {e}')
+                    raise e
+
+                # Check if we got the poison pill --if so, shut down.
+                if input_data == POISON_PILL:
+                    q_out.put(POISON_PILL)
+                    do_det = False
+                    break
+
+                try:
+                    det_b = run_det_inner(input_data, det_black, opts)
+                    det_w = run_det_inner(input_data, det_white, opts)
+                    # Send the output to the post-detection processing worker.
+                    q_out_det.put([det_b, det_w])
+                except Exception as e:
+                    print("\nerror occurred during detection (function MARS_pose_machinery.run_det)")
+                    print(e)
+                    q_out.put(POISON_PILL)
+                    raise e
+
+        if do_hm:
+            for item in range(BATCH_SIZE):
+                try:
+                    # Collect the prepared images for inference.
+                    if q_in_hm.empty(): # only a hint
+                        print("q_in_hm is empty")
+                        break
+                    print('trying to get from q_in_hm')
+                    prepped_images = q_in_hm.get()
+                    print('got hm')
+                except Exception as e:
+                    print(f"unexpected exception trying to get from q_in_hm: {e}")
+                    raise e
+
+                # Check if we got the poison pill --if so, shut down.
+                if prepped_images == POISON_PILL:
+                    q_out_hm.put(POISON_PILL)
+                    do_hm = False
+                    break
+
+                try:
+                    predicted_heatmaps = run_hm_inner(prepped_images, pose_model)
+
+                    # Send the heatmaps out for post-processing.
+                    q_out_hm.put(predicted_heatmaps)
+                except Exception as e:
+                    print("\nerror occurred during pose estimation (function MARS_pose_machinery.run_hm)")
+                    print(e)
+                    raise(e)
+    return

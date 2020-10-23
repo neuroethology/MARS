@@ -189,28 +189,26 @@ def predict_labels(features, classifier_path, behaviors=[]):
 def predict_probabilities(features, classifier_path, behaviors=[], VERBOSE = True):
         ''' This predicts behavior labels on a video, given a classifier and features.'''
         if not behaviors:
-            behaviors = ['closeinvestigation','mount', 'attack','interaction']
+            behaviors = ['closeinvestigation','mount', 'attack']
 
 
-        scaler = joblib.load(classifier_path + '/scaler')
-        # Scale the data appropriately.
-        print("transforming features")
-        X_test = scaler.transform(features)
+        # scaler = joblib.load(classifier_path + '/scaler')
+        # # Scale the data appropriately.
+        # print("transforming features")
+        # X_test = scaler.transform(features)
 
-        print("assembling models")
         models = [os.path.join(classifier_path, filename) for filename in os.listdir(classifier_path)]
         behaviors_used = []
 
         preds_fbs_hmm = []
         proba_fbs_hmm = []
 
-        print("predict_probabilities: just before for loop")
         for b, behavior in enumerate(behaviors):
             # For each behavior, load the model, load in the data (if needed), and predict on it.
             print('############################## %s #########################' % behavior)
 
             # Get all the models that model the given behavior.
-            models_with_this_behavior = filter(lambda x: x.find('classifier_' + behavior) > -1, models)
+            models_with_this_behavior = filter(lambda x: x.find('classifier_' + behavior + '.pkl') > -1, models)
             # pdb.set_trace()
             # If there are models for this behavior, load the most recently trained one.
             if models_with_this_behavior:
@@ -221,11 +219,12 @@ def predict_probabilities(features, classifier_path, behaviors=[], VERBOSE = Tru
 
                 classifier = joblib.load(name_classifier)
 
+                scaler = classifier['scaler']
                 bag_clf = classifier['bag_clf']  if 'bag_clf' in classifier.keys() else classifier['clf']
                 hmm_fbs = classifier['hmm_fbs']
-                kn = classifier['k']
-                blur_steps = classifier['blur_steps']
-                shift = classifier['shift']
+                kn = classifier['params']['smk_kn']
+                blur_steps = classifier['params']['blur']
+                shift = classifier['params']['shift']
 
                 # Keep track of which behaviors get used.
                 behaviors_used += [behavior]
@@ -235,12 +234,15 @@ def predict_probabilities(features, classifier_path, behaviors=[], VERBOSE = Tru
                 print('Classification will continue without classifying this behavior')
                 continue
 
-
+            # apply the scaler.
             if VERBOSE:
-                print("Predicting...")
                 tstart = tt()
+                print("Transforming features...")
+            X_test = scaler.transform(features)
 
             # Do the actual prediction.
+            if VERBOSE:
+                print("Predicting...")
             predicted_probabilities = bag_clf.predict_proba(X_test)
             predicted_class = np.argmax(predicted_probabilities, axis=1)
 
@@ -282,24 +284,20 @@ def predict_probabilities(features, classifier_path, behaviors=[], VERBOSE = Tru
 def assign_labels(all_predicted_probabilities, behaviors_used):
     ''' Assigns labels based on the provided probabilities.'''
     labels = []
-    labels_interaction=[]
+    labels_interaction = [] # this is not working for now, Ann needs to re-train this classifier.
+
     num_frames = all_predicted_probabilities.shape[0]
     # Looping over frames, determine which annotation label to take.
-    for i in xrange(num_frames):
+    for i in range(num_frames):
         # Get the [3x2] matrix of current prediction probabilities.
-        current_prediction_probabilities = all_predicted_probabilities[i,:-1]
-        current_prediction_probabilities_interaction = all_predicted_probabilities[i,-1]
+        current_prediction_probabilities = all_predicted_probabilities[i,:]
+
         # Get the positive/negative labels for each behavior, by taking the argmax along the pos/neg axis.
         onehot_class_predictions = np.argmax(current_prediction_probabilities, axis=1)
-        onehot_class_predictions_interaction = np.argmax(current_prediction_probabilities_interaction)
-        if onehot_class_predictions_interaction == 0:
-            labels_interaction.append('other')
-        else:labels_interaction.append(behaviors_used[-1])
 
         # Get the actual probabilities of those predictions.
         predicted_class_probabilities = np.max(current_prediction_probabilities, axis=1)
 
-        # If every behavioral predictor agrees that the current_
         if np.all(onehot_class_predictions == 0):
             # The index here is one past any positive behavior --this is how we code for "other".
             beh_frame = 0
@@ -320,7 +318,7 @@ def assign_labels(all_predicted_probabilities, behaviors_used):
             labels += [behaviors_used[beh_frame]]
             beh_frame += 1
 
-
+        labels_interaction += ['other'] # replace this with proper prediction later.
 
     return labels,labels_interaction
 
@@ -350,7 +348,7 @@ def dump_labels_CBA(labels,labels_interaction, classification_txtname):
     # lab2k = {0: 'o', 1: 'i', 2: 'm', 3: 'a', 6: 'g', 4: 'h', 5: 'b'}
 
     # Open the file you want to write to.
-    fp = open(classification_txtname, 'wb')
+    fp = open(classification_txtname, 'w')
 
     # Write the header.
     fp.write('Caltech Behavior Annotator - Annotation File\n\n')
@@ -362,7 +360,6 @@ def dump_labels_CBA(labels,labels_interaction, classification_txtname):
     fp.write('-----------------------------\n')
 
     #####################################################
-
     curr_frame_num = 0
     beginning_of_current_bout = 0
     end_of_current_bout = 0

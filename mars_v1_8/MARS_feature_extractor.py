@@ -20,7 +20,7 @@ import scipy.io as sio
 import numpy.core.records as npc
 warnings.filterwarnings('ignore')
 sys.path.append('./')
-from seqIo import *
+from util.seqIo import *
 from MARS_feature_machinery import *
 import MARS_output_format as mof
 
@@ -35,7 +35,7 @@ def load_pose(pose_fullpath):
         raise e
 
 
-def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=''):
+def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig='', max_frames=999999):
     video_name = os.path.basename(top_video_fullpath)
     frames_pose = load_pose(top_pose_fullpath)
     num_points = len(frames_pose['scores'][0][0])
@@ -60,10 +60,8 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
         num_frames = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
         im_h = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
         im_w = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-
-    """
-    num_frames = 1024
-    """
+    
+    num_frames = min(num_frames, max_frames)
 
     pix_per_cm = 37.79527606671214
     eps = np.spacing(1)
@@ -1378,7 +1376,7 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
         return []
 
 
-def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_fullpath, progress_bar_sig=''):
+def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_fullpath, progress_bar_sig='', max_frames=999999):
     video_name = os.path.basename(top_video_fullpath)
     frames_pose = load_pose(top_pose_fullpath)
     num_points = len(frames_pose['scores'][0][0])
@@ -1403,6 +1401,8 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         num_frames = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
         im_h = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
         im_w = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+    
+    num_frames = min(num_frames, max_frames)
 
     extf = front_video_fullpath[-3:]
     if extf == 'seq':
@@ -1423,6 +1423,8 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         num_framesf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
         im_hf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
         im_wf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+
+    num_framesf = min(num_framesf, max_frames)
 
     pix_per_cm = 37.79527606671214
     eps = np.spacing(1)
@@ -1592,7 +1594,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
     num_features = len(features)
     keypoints = [f for f in frames_pose['keypoints']]
 
-    num_frames = np.minimum(num_frames, num_framesf)
+    num_frames = min(num_frames, num_framesf)
     smooth_kernel = np.array([1, 2, 1]) / 4.
 
     try:
@@ -2861,7 +2863,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         return []
 
 
-def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_fullpath, progress_bar_sig=''):
+def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_fullpath, progress_bar_sig='', max_frames=999999):
     video_name = os.path.basename(top_video_fullpath)
 
 
@@ -2891,7 +2893,8 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
         im_h = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
         im_w = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
         vc.release()
-
+    
+    num_frames = min(num_frames, max_frames)
 
     extf = front_video_fullpath[-3:]
     if extf == 'seq':
@@ -4274,7 +4277,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
     
 
 
-def extract_top_features_wrapper(top_video_fullpath, doOverwrite,progress_bar_sig='',output_suffix=''):
+def extract_top_features_wrapper(top_video_fullpath, doOverwrite,progress_bar_sig='',output_suffix='', max_frames=999999):
 
     video_path = os.path.dirname(top_video_fullpath)
     video_name = os.path.basename(top_video_fullpath)
@@ -4301,7 +4304,8 @@ def extract_top_features_wrapper(top_video_fullpath, doOverwrite,progress_bar_si
             t = time.time()
             feat = extract_features_top(top_video_fullpath=top_video_fullpath,
                                         top_pose_fullpath=top_pose_fullpath,
-                                        progress_bar_sig=progress_bar_sig)
+                                        progress_bar_sig=progress_bar_sig,
+                                        max_frames=max_frames)
             if feat == []:
                 print('skipping for no feats, something went wrong')
             else:
@@ -4333,7 +4337,7 @@ def extract_top_features_wrapper(top_video_fullpath, doOverwrite,progress_bar_si
 
 
 def extract_front_features_wrapper(top_video_fullpath, front_video_fullpath,
-                                   doOverwrite,progress_bar_sig='',output_suffix=''):
+                                   doOverwrite,progress_bar_sig='',output_suffix='', max_frames=999999):
     video_path = os.path.dirname(top_video_fullpath)
     video_name = os.path.basename(top_video_fullpath)
 
@@ -4363,7 +4367,8 @@ def extract_front_features_wrapper(top_video_fullpath, front_video_fullpath,
             feat = extract_features_front(top_video_fullpath=top_video_fullpath,
                                           front_video_fullpath=front_video_fullpath,
                                           front_pose_fullpath=front_pose_fullpath,
-                                          progress_bar_sig=progress_bar_sig)
+                                          progress_bar_sig=progress_bar_sig,
+                                          max_frames=max_frames)
             if feat == []:
                 print('skipping for no feats, something went wrong')
             else:
@@ -4387,7 +4392,8 @@ def extract_front_features_wrapper(top_video_fullpath, front_video_fullpath,
 def extract_top_pcf_features_wrapper(top_video_fullpath, front_video_fullpath,
                                      doOverwrite,
                                      progress_bar_sig='',
-                                     output_suffix=''):
+                                     output_suffix='',
+                                     max_frames=9999999):
     video_path = os.path.dirname(top_video_fullpath)
     video_name = os.path.basename(top_video_fullpath)
     output_folder = mof.get_mouse_output_dir(dir_output_should_be_in=video_path, video_name=video_name,
