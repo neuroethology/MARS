@@ -5,25 +5,19 @@ MARS is an end-to-end computational pipeline for **tracking**, **pose estimation
 MARS can be run either through a graphical interface or from the command line.
 
 ### Installation
-Installation of MARS can be managed via either a conda environment or a Docker container. To run MARS you will need a Linux computer with an Nvidia GPU.
+MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU; MARS runs fastest on NVIDIA GPUs with at least 10Gb memory.
 
-#### Step-by-step instructions for installing the MARS conda environment
-1) If not already installed, install [miniconda](https://docs.conda.io/en/latest/miniconda.html) by opening a terminal and entering:
+The easiest way to set up MARS is with a conda environment, which will handle the installation of all necessary Python modules, including Tensorflow 1.15. In cases where this is not possible, we also provide a Docker environment (see next section).
 
-     ```
-     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-     sh ./Miniconda3-latest-Linux-x86_64.sh
-     ```
-    then following the install instructions. Check your install by opening a new terminal and typing `which python`. This should return something like `~/miniconda3/bin/python`.
+The following instructions cover GPU setup and creation of the MARS conda environment:
 
-2) Clone or download the contents of this GitHub repository.
-
-3) Build the MARS conda environment by navigating to your local copy of the MARS GitHub repository and calling
-    ```
-    conda env create -f MARS_environment_py2.yml
-    ```
-    Once the build has finished, you can activate the MARS environment by calling `conda activate mars` (or `system activate mars`).
+|Operating System ( + GPU) | Install Instructions |
+|---|:---:|
+|Windows + NVIDIA | [link](docs/install_windows_nvidia.md) |
+|Windows + other | [link]() - TODO |
+|Linux + NVIDIA | [link](docs/install_linux_nvidia.md) |
+|Mac | [link]() - TODO |
 
 
-#### Step-by-step instructions for installing the MARS Docker
-Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Step-by-step instructions can be found [here](https://github.com/neuroethology/MARS/blob/master/README_Docker.md).
+#### Docker support
+Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved and error-prone process. Step-by-step instructions can be found [here](docs/Docker_instructions.md).

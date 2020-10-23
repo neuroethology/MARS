@@ -130,3 +130,6 @@ dmypy.json
 
 # Don't commit the trained models
 models/
+
+# Pycharm
+.idea/
