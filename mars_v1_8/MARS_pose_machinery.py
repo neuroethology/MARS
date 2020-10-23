@@ -63,10 +63,8 @@ class ImportGraphDetection():
 
             # Create the Session we will use to execute the model.
             devices = tf.compat.v1.config.experimental.list_physical_devices('GPU')
-            print(devices)
-            device_name = '/device:GPU:' + str(gpu_to_try)
-            print(f"ImportGraphDetection: trying to use GPU device {device_name}")
-            with tf.device(device_name):
+            print(f"ImportGraphDetection: trying to use GPU device {devices[gpu_to_try].name}")
+            with tf.device(devices[gpu_to_try].name):
                 self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
 
             # Give object access to the input and output nodes.
@@ -80,8 +78,6 @@ class ImportGraphDetection():
     def run(self, input_image):
         ''' This method is what actually runs an image through the Multibox network.'''
         if self.use_ml_model:
-            if True and platform.system() == 'Darwin':
-                import coremltools
             if not self.ml_model:
                 # delay loading the model until we're in the correct thread
                 self.ml_model = coremltools.models.MLModel(self.ml_model_path)
@@ -126,9 +122,9 @@ class ImportGraphPose():
                 # gpu_options=tf.GPUOptions(allow_growth=True))
                 gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.45))
 
-            device_name = '/device:GPU:' + str(gpu_to_try)
-            print(f"ImportGraphPose: trying to use GPU device {device_name}")
-            with tf.device(device_name):
+            devices = tf.compat.v1.config.experimental.list_physical_devices('GPU')
+            print(f"ImportGraphDetection: trying to use GPU device {devices[gpu_to_try].name}")
+            with tf.device(devices[gpu_to_try].name):
                 self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
 
             # access to input and output nodes
@@ -140,8 +136,6 @@ class ImportGraphPose():
     def run(self, cropped_images):
         """ This method is what actually runs an image through the stacked hourglass network."""
         if self.use_ml_model:
-            if True and platform.system() == 'Darwin':
-                import coremltools
             if not self.ml_model:
                 # delay loading the model until we're in the correct thread
                 self.ml_model = coremltools.models.MLModel(self.ml_model_path)
