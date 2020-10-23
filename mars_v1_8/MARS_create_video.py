@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import progressbar
 sys.path.append('./')
-from seqIo import seqIo_reader,parse_ann_dual
+from util.seqIo import seqIo_reader,parse_ann_dual
 import MARS_output_format as mof
 import multiprocessing as mp
 import cv2

@@ -16,7 +16,7 @@ import time
 sys.path.append('./')
 
 import MARS_output_format as mof
-from seqIo import *
+from util.seqIo import *
 from MARS_detection_unpackers import *
 
 

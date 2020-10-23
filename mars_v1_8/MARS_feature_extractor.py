@@ -20,7 +20,7 @@ import scipy.io as sio
 import numpy.core.records as npc
 warnings.filterwarnings('ignore')
 sys.path.append('./')
-from seqIo import *
+from util.seqIo import *
 from MARS_feature_machinery import *
 import MARS_output_format as mof
 

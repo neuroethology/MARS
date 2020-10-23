@@ -3,7 +3,7 @@ import numpy as np
 from itertools import islice
 import multiprocessing as mp
 import math as mh
-from seqIo import *
+from util.seqIo import *
 import scipy
 import scipy.io as sio
 import cmath as chm
