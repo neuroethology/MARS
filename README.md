@@ -7,7 +7,7 @@ MARS can be run either through a graphical interface or from the command line.
 ### Installation
 MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU; MARS runs fastest on NVIDIA GPUs with at least 10Gb memory.
 
-The easiest way to set up MARS is with a conda environment, which will handle the installation of all necessary Python modules, including Tensorflow 1.15. In cases where this is not possible, we also provide a Docker environment (see next section).
+The easiest way to set up MARS is with a conda environment, which will handle the installation of all necessary Python modules. In cases where this is not possible, we also provide a Docker environment (see next section).
 
 The following instructions cover GPU setup and creation of the MARS conda environment:
 
