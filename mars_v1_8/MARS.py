@@ -29,6 +29,7 @@ def get_mars_default_options():
                     'front_pose_model': 'models/pose/MARS_front_pose.pb',
                     'top_pose_model': 'models/pose/MARS_top_pose.pb',
                     'verbose': 1,
+                    'max_frames': 999999,
                     }
     return default_opts
 
@@ -147,7 +148,8 @@ def run_MARS(folders, user_opts={}):
                                                  doOverwrite = mars_opts['doOverwrite'],
                                                  progress_bar_signal = [],
                                                  mars_opts = mars_opts,
-                                                 verbose=mars_opts['verbose'])
+                                                 verbose=mars_opts['verbose'],
+                                                 max_frames=mars_opts['max_frames'])
                         print("saved.\n")
 
                     if mars_opts['doTop'] or mars_opts['doToppcf']:
@@ -157,7 +159,8 @@ def run_MARS(folders, user_opts={}):
                                                  doOverwrite = mars_opts['doOverwrite'],
                                                  progress_bar_signal = [],
                                                  mars_opts=mars_opts,
-                                                 verbose=mars_opts['verbose'])
+                                                 verbose=mars_opts['verbose'],
+                                                 max_frames=mars_opts['max_frames'])
                         print('   saved.')
 
                     if not (mars_opts['doFront']|mars_opts['doTop']|mars_opts['doToppcf']):
@@ -179,7 +182,8 @@ def run_MARS(folders, user_opts={}):
                         mfe.extract_top_features_wrapper(top_video_fullpath = fullpath_to_top,
                                                         doOverwrite = mars_opts['doOverwrite'],
                                                         progress_bar_sig = [],
-                                                        output_suffix = '')
+                                                        output_suffix = '',
+                                                        max_frames=mars_opts['max_frames'])
                         print('   saved.')
 
                     if mars_opts['doToppcf']:
@@ -188,7 +192,8 @@ def run_MARS(folders, user_opts={}):
                                                             front_video_fullpath = fullpath_to_front,
                                                             doOverwrite = mars_opts['doOverwrite'],
                                                             progress_bar_sig = [],
-                                                            output_suffix = '')
+                                                            output_suffix = '',
+                                                            max_frames=mars_opts['max_frames'])
                         print('   saved.')
 
                     if mars_opts['doFront']:
@@ -197,7 +202,8 @@ def run_MARS(folders, user_opts={}):
                                                         front_video_fullpath = fullpath_to_front,
                                                         doOverwrite = mars_opts['doOverwrite'],
                                                         progress_bar_sig = [],
-                                                        output_suffix = '')
+                                                        output_suffix = '',
+                                                        max_frames = mars_opts['max_frames'])
                         print('   saved.')
 
                     if not (mars_opts['doTop'] | mars_opts['doToppcf']):

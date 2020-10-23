@@ -16,11 +16,12 @@ import time
 sys.path.append('./')
 
 import MARS_output_format as mof
-from seqIo import *
+from util.seqIo import *
 from MARS_detection_unpackers import *
 
 
-def extract_pose_wrapper(video_fullpath, view, doOverwrite, progress_bar_signal='', verbose=0, output_suffix='', mars_opts={}):
+def extract_pose_wrapper(video_fullpath, view, doOverwrite, progress_bar_signal='',
+    verbose=0, output_suffix='', mars_opts={}, max_frames=999999):
     video_path = os.path.dirname(video_fullpath)
     video_name = os.path.basename(video_fullpath)
     output_folder = mof.get_mouse_output_dir(dir_output_should_be_in=video_path, video_name=video_name,
@@ -33,14 +34,20 @@ def extract_pose_wrapper(video_fullpath, view, doOverwrite, progress_bar_signal=
                  doOverwrite=doOverwrite,
                  progress_bar_signal=progress_bar_signal,
                  mars_opts = mars_opts,
-                 verbose = verbose
+                 verbose = verbose,
+                 max_frames = max_frames
                  )
     return
 
 
+def get_macOS_version_info():
+    if platform.system() != "Darwin":
+        return (0, 0, 0)
+    return tuple(map(int, platform.mac_ver()[0].split('.')))
+
 def extract_pose(video_fullpath, output_folder, output_suffix, view,
                        doOverwrite, progress_bar_signal, mars_opts,
-                       verbose=1):
+                       verbose=1, max_frames=999999):
 
     pose_basename = mof.get_pose_no_ext(video_fullpath=video_fullpath,
                                     output_folder=output_folder,
@@ -63,9 +70,10 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
         return
     
     try:
-        # coremltools on MACs doesn't interact well with multiprocessing, but access to the system GPU, even if it's
-        # not from NVidia, more than makes up for sequential processing.
-        use_multiprocessing = True or platform.system != 'Darwin'
+        # coremltools on MACs doesn't interact well with multiprocessing, but access to the system GPU, even if it's not
+        # from NVidia, more than makes up for sequential processing.  coremltools only works on MacOS Catalina and up.
+        major, minor, _ = get_macOS_version_info()
+        use_multiprocessing = not (major == 10 and minor >= 15)
 
         if verbose:
             print('1 - Extracting pose')
@@ -96,9 +104,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 IM_H = vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
                 IM_W = vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
 
-            """
-            NUM_FRAMES = min(NUM_FRAMES, 1024)
-            """
+            NUM_FRAMES = min(NUM_FRAMES, max_frames)
 
             # unpack user-provided bounding boxes if they exist:
             bboxes = [None] * NUM_FRAMES
@@ -115,17 +121,9 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 if verbose:
                     print("      Creating pool...")
 
-                # we need at least 8 workers to manage the queue:
-                # if mp.cpu_count() > 8:
-                #     workers_to_use = mp.cpu_count()
-                # else:
-                # actually, there's no reason to use more than 8.  It just creates unneeded python
-                # processes to do so.
                 workers_to_use = 8
-                # """
                 pool = mp.Pool(workers_to_use)
                 manager = mp.Manager()
-                # """
                 maxsize = 5
                 
                 if verbose:
