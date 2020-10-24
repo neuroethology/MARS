@@ -1,4 +1,4 @@
-name: mars_p3
+name: mars
 channels:
   - conda-forge
   - anaconda
@@ -126,4 +126,3 @@ dependencies:
   - xz=5.2.5=h14c3975_0
   - zlib=1.2.11.1=h14c3975_1
 prefix: /home/djalab/anaconda3/envs/mars_p3
-
