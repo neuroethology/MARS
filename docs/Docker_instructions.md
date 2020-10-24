@@ -1,38 +1,53 @@
-## Step-by-step instructions for installing the MARS Docker
-Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Users should be familiar with the concept of Docker and Docker containers.
+# Step-by-step instructions for installing the MARS Docker
+Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Users should read up on the concept of Docker and Docker containers to understand what's happening.
 
-### Install [Docker](https://www.docker.com/)
+>Unfortunately, Docker on Windows is unable to run tasks on the GPU, so we do not recommend Docker-based installation of MARS on Windows computers at this time.
 
-Follow these instructions (for Ubuntu): [https://docs.docker.com/install/linux/docker-ce/ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu).
+## Install [Docker](https://www.docker.com/)
 
-You can verify that Docker was installed correctly by calling the `hello-world` image:
-    ```
-    docker run hello-world
-    ```
-### Install `nvidia-docker-2`
-This will allow MARS to access your GPU from within a docker container. Follow the installation instructions at [https://github.com/NVIDIA/nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
+**Instructions for Linux:** [https://docs.docker.com/engine/install/](https://docs.docker.com/engine/install/).
+**Instructions for MacOS:** [https://docs.docker.com/docker-for-mac/install/](https://docs.docker.com/docker-for-mac/install/).
+<!---
+**Instructions for Windows 10:** [https://docs.docker.com/docker-for-windows/install/](https://docs.docker.com/docker-for-windows/install/).
+> Windows Security can sometimes prevent Docker from launching in Windows 10. If you have this issue, follow these steps:
+>* Open "Window Security"
+>* Open "App & Browser control"
+>* Click "Exploit protection settings" at the bottom
+>* Switch to "Program settings" tab
+>* Select "Add program to customize" and navigate to `C:\WINDOWS\System32\vmcompute.exe`
+>* Click "Edit"
+>* Scroll down to "Code flow guard (CFG)" and uncheck "Override system settings"
+>* Start vmcompute from Powershell with command `net start vmcompute`
+-->
 
-  Verify that `nvidia-docker` was installed properly by calling:
+Verify that Docker was installed correctly by calling `docker run hello-world` from terminal (same command on all operating systems). This should output a "Hello from Docker!" message with some additional text.
+
+## Install `nvidia-docker2`
+This will allow MARS to access your GPU from within a docker container. Follow the installation instructions [https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker](here).
+
+  Verify that `nvidia-docker2` was installed properly by calling:
   ```
-  docker run --runtime=nvidia --rm nvidia/cuda:9.0-base nvidia-smi
+  sudo docker run --rm --gpus all nvidia/cuda:10.0-base nvidia-smi
   ```
-  output from this call should be the same as when you call `nvidia-smi` from terminal. If this doesn't work, you may need to repeat the Docker install process and specify the version of Docker in your install command, for instance:
-  ```
-  apt-get install docker-ce=18.06.2~ce~3-0~ubuntu
-  ```
-### Build the MARS-docker image
+  output from this call should be the same as when you call `nvidia-smi` from terminal.
+  >(Note: since the official `nvidia-docker2` install instructions all use `sudo`, we will be using `sudo` for all docker commands from here onward.)
+
+## Build the MARS-docker image
 This only needs to be done once, unless you would like to update to a more recent version of MARS, or add new trained models to MARS.
 
-To build the Docker image, open the terminal and `cd` into this repo, then type:
+If you haven't already, download MARS from GitHub:
 ```
-docker image build -t mars-docker .
+git clone --recurse-submodules https://github.com/neuroethology/MARS
 ```
-(you may need to `sudo` this.)
+To build the Docker image, `cd` into the MARS repository and type:
+```
+sudo docker image build -t mars-docker .
+```
 
-### Start the MARS container
+## Start the MARS container
 This also only needs to be done once per session, and uses the MARS-docker image to start a container (an instantiation of an image) within which you can run MARS. Enter the  command:
   ```
-  nvidia-docker run -e GPU=0 -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /media:/media -p 8888:8888 -dit --name MARS mars-docker
+  sudo nvidia-docker run -e GPU=0 -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /media:/media -p 8888:8888 -dit --name MARS mars-docker
   ```
   A breakdown of this command:
   - `nvidia-docker run mars-docker` starts a container from the mars-docker image you just built.
@@ -44,7 +59,7 @@ This also only needs to be done once per session, and uses the MARS-docker image
   - `-dit` starts the container in detached + interactive mode
   - `--name MARS` is the name of the container you're starting (can be anything)
 
-  > **_NOTE:_** On some computers, the nvidia docker image MARS is based on fails to install cudnn5.1 correctly, without which tensorflow won't run on the GPU. If you have cudnn5.1 on your local machine, you can hackily fix this by adding the argument `-v /usr/local/cuda:/usr/local/cuda` to the command above, ie borrowing the needed files from the host computer. Another option is to enter the built container and install cudnn5.1 manually. Still not sure what is causing cudnn5.1 installation to fail.
+  > **_NOTE:_** Sometimes the NVIDIA docker image fails to install cuDNN correctly, without which TensorFlow won't run on the GPU. If you have cuDNN 7.4 or greater on your local machine, you can fix this by adding the argument `-v /usr/local/cuda:/usr/local/cuda` to the command above, ie borrowing the needed files from the host computer. Another option is to enter the built container by calling `docker attach MARS` and install cuDNN manually, following instructions [here](install_linux_nvidia.md).
 
   To confirm that your container is running, enter the command `docker ps -a` into terminal. You should see a container named "MARS" that was just created:
   ```
@@ -52,12 +67,9 @@ This also only needs to be done once per session, and uses the MARS-docker image
   b065b587a340        mars-docker         "/bin/bash"         18 minutes ago      Exited (0) 16 seconds ago                       MARS
   ```
 
-### Enter the MARS container and run MARS
-Once the container has been created, enter it by calling `docker attach MARS`. You should see a command line that looks like: `root@b065b587a340:/app/MARS_v1_7#` (you may need to hit enter more than once for the prompt to show up).
+### Enter the MARS container and launch MARS
+Once the container has been created, enter it by calling `sudo docker attach MARS`. You should see a command line that looks like: `root@XXXXXXXXXXb065b587a340:/app/MARS_v1_8#` (you may need to hit enter more than once for the prompt to show up).
 
-If you get an error message saying the container has not been started, call `docker start MARS` then try again.
+If you get an error message saying the container has not been started, call `sudo docker start MARS` then try again.
 
-To test out MARS, call `python MARS_v1_7.py`. This should launch the MARS gui. If you're getting an error about being unable to access the display, enter the command `xhost local:root` in terminal, then try re-starting the container.
-
-
-Hit the Browse button and navigate to the folder containing your videos, then press "Enqueue". Check boxes for the analyses you'd like to run, then click "Run MARS". You can track MARS's progress using the progress bars in the gui, or from the text output to the terminal.
+To test out MARS, call `python MARS_v1_8.py`. This should launch the MARS gui. If you're getting an error about being unable to access the display, enter the command `xhost local:root` in terminal, then try re-starting the container.
