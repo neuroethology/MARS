@@ -25,12 +25,11 @@ Verify that Docker was installed correctly by calling `docker run hello-world` f
 ## Install the NVIDIA Container Toolkit
 This will allow MARS to access your GPU from within a docker container. Follow the installation instructions [https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker](here).
 
-  Verify that `nvidia-docker2` was installed properly by calling:
+  Verify that everything installed properly by calling:
   ```
-  sudo docker run --rm --gpus all nvidia/cuda:10.0-base nvidia-smi
+  sudo docker run --rm --gpus all nvidia/cuda nvidia-smi
   ```
   output from this call should be the same as when you call `nvidia-smi` from terminal.
-  >(Note: since the official `nvidia-docker2` install instructions all use `sudo`, we will be using `sudo` for all docker commands from here onward.)
 
 ## Build the MARS-docker image
 This only needs to be done once, unless you would like to update to a more recent version of MARS, or add new trained models to MARS.
