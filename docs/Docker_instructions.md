@@ -55,13 +55,13 @@ This will be done once per session, and uses the MARS-docker image to start a co
   A breakdown of this command:
   - `docker run mars-docker` starts a container from the mars-docker image you just built.
   - `--gpus all` tells docker to give the container access to the computer's GPUs.
-  - `-e DISPLAY=$DISPLAY` lets the nvidia-docker send display output to your monitor. You can omit this command if you don't want to use the MARS gui.
+  - `-e DISPLAY=$DISPLAY` lets the container send display output to your monitor. You can omit this command if you don't want to use the MARS gui.
   - `-e QT_X11_NO_MITSHM=1` and `-v /tmp/.X11-unix:/tmp/.X11-unix` let the gui interface properly with X11 for display rendering- these are also unnecessary if you don't intend to use the gui.
-  - `-v /media:/media` will allow your container to access the contents of the `/media` directory on the host machine; the `:/media` part means the contents of `/media` will appear in `/media` within the docker container (modify as desired). If you store your data somewhere else, you should modify this part to `-v /path/to/your/data:/path/within/docker`
-  - `-p 8888:8888` sets the port so you can use tensorboard or jupyter within the container via port 8888 (modify port number as desired).
+  - `-v /media:/media` will allow your container to access the contents of the `/media` directory on the host machine; the `:/media` part means the contents of `/media` will appear in `/media` within the docker container (modify as desired). In general, you can modify this part to `-v /path/to/your/data:/path/to/use/within/docker`
+  - `-p 8888:9999` sets the port so you can use tensorboard or jupyter within the container via port 9999 (modify port number as desired). Note, `8888` is the address of this port from within the docker container, and `9999` is the port things display on outside the container. (Or just use the same number for both to avoid confusion.)
   - `-dit` starts the container in detached + interactive mode, and tells the container to stop running when exited.
   - `--name MARS` is the name of the container you're starting (can be anything)
-  - `bash` means you'll connect to the bash terminal when you enter the image
+  - `bash` means you'll connect to the bash terminal when you enter the container.
 
   > **_NOTE:_** These instructions are for Docker version 19.03 and later. If you use an earlier version of Docker, you should instead enter the image using `nvidia-docker`, like so: `sudo nvidia-docker run -e GPU=0 -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /media:/media -p 8888:8888 -dit --name MARS mars-docker`
 
