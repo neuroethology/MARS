@@ -125,4 +125,9 @@ dependencies:
   - wheel=0.31.0=py36_3
   - xz=5.2.5=h14c3975_0
   - zlib=1.2.11.1=h14c3975_1
-prefix: /home/djalab/anaconda3/envs/mars_p3
+  - pip:
+    - colour-demosaicing==0.1.5
+    - colour-science==0.3.15
+    - hmmlearn==0.2.4
+    - scikit-learn==0.23.2
+prefix: /home/djalab/anaconda3/envs/mars
