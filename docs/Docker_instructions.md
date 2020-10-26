@@ -22,7 +22,7 @@ Installing MARS via Docker instead of conda will give MARS more protection from 
 
 Verify that Docker was installed correctly by calling `docker run hello-world` from terminal (same command on all operating systems). This should output a "Hello from Docker!" message with some additional text.
 
-## Install `nvidia-docker2`
+## Install the NVIDIA Container Toolkit
 This will allow MARS to access your GPU from within a docker container. Follow the installation instructions [https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker](here).
 
   Verify that `nvidia-docker2` was installed properly by calling:
@@ -39,7 +39,10 @@ If you haven't already, download MARS from GitHub:
 ```
 git clone --recurse-submodules https://github.com/neuroethology/MARS
 ```
-To build the Docker image, `cd` into the MARS repository and type:
+And download and unzip the trained MARS models into the `mars_v1_8` directory from [data.caltech.edu](https://data.caltech.edu/records/1655). After unzipping you should have a folder `MARS\mars_v1_8\models` that contains directories `detection`, `pose`, and `classifier`.
+
+
+Now, to build the Docker image, `cd` into the `MARS` directory (which contains the MARS `Dockerfile`) and type:
 ```
 sudo docker image build -t mars-docker .
 ```
