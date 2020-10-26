@@ -6,8 +6,8 @@ Installing MARS via Docker instead of conda will give MARS more protection from 
 ## Install [Docker](https://www.docker.com/)
 
 **Instructions for Linux:** [https://docs.docker.com/engine/install/](https://docs.docker.com/engine/install/).
-**Instructions for MacOS:** [https://docs.docker.com/docker-for-mac/install/](https://docs.docker.com/docker-for-mac/install/).
 <!---
+**Instructions for MacOS:** [https://docs.docker.com/docker-for-mac/install/](https://docs.docker.com/docker-for-mac/install/).
 **Instructions for Windows 10:** [https://docs.docker.com/docker-for-windows/install/](https://docs.docker.com/docker-for-windows/install/).
 > Windows Security can sometimes prevent Docker from launching in Windows 10. If you have this issue, follow these steps:
 >* Open "Window Security"
@@ -47,19 +47,20 @@ sudo docker image build -t mars-docker .
 ## Start the MARS container
 This also only needs to be done once per session, and uses the MARS-docker image to start a container (an instantiation of an image) within which you can run MARS. Enter the  command:
   ```
-  sudo nvidia-docker run -e GPU=0 -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /media:/media -p 8888:8888 -dit --name MARS mars-docker
+  sudo docker run --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix-v /media:/media -p 8888:8888 -dit --name MARS mars-docker bash
   ```
   A breakdown of this command:
-  - `nvidia-docker run mars-docker` starts a container from the mars-docker image you just built.
-  - `-e GPU=0` tells nvidia-docker to give the container access to GPU 0 (change id of GPU if necessary; you can check your GPU id by calling `nvidia-smi`)
+  - `docker run mars-docker` starts a container from the mars-docker image you just built.
+  - `--gpus all` tells docker to give the container access to the computer's GPUs.
   - `-e DISPLAY=$DISPLAY` lets the nvidia-docker send display output to your monitor. You can omit this command if you don't want to use the MARS gui.
   - `-e QT_X11_NO_MITSHM=1` and `-v /tmp/.X11-unix:/tmp/.X11-unix` let the gui interface properly with X11 for display rendering- these are also unnecessary if you don't intend to use the gui.
   - `-v /media:/media` will allow your container to access the contents of the `/media` directory on the host machine; the `:/media` part means the contents of `/media` will appear in `/media` within the docker container (modify as desired). If you store your data somewhere else, you should modify this part to `-v /path/to/your/data:/path/within/docker`
   - `-p 8888:8888` sets the port so you can use tensorboard or jupyter within the container via port 8888 (modify port number as desired).
   - `-dit` starts the container in detached + interactive mode
   - `--name MARS` is the name of the container you're starting (can be anything)
+  - `bash` means you'll connect to the bash terminal when you enter the image
 
-  > **_NOTE:_** Sometimes the NVIDIA docker image fails to install cuDNN correctly, without which TensorFlow won't run on the GPU. If you have cuDNN 7.4 or greater on your local machine, you can fix this by adding the argument `-v /usr/local/cuda:/usr/local/cuda` to the command above, ie borrowing the needed files from the host computer. Another option is to enter the built container by calling `docker attach MARS` and install cuDNN manually, following instructions [here](install_linux_nvidia.md).
+  > **_NOTE:_** These instructions are for Docker version 19.03 and later. If you use an earlier version of Docker, you should instead enter the image using `nvidia-docker`, like so: `sudo nvidia-docker run -e GPU=0 -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /media:/media -p 8888:8888 -dit --name MARS mars-docker`
 
   To confirm that your container is running, enter the command `docker ps -a` into terminal. You should see a container named "MARS" that was just created:
   ```
@@ -68,7 +69,7 @@ This also only needs to be done once per session, and uses the MARS-docker image
   ```
 
 ### Enter the MARS container and launch MARS
-Once the container has been created, enter it by calling `sudo docker attach MARS`. You should see a command line that looks like: `root@XXXXXXXXXXb065b587a340:/app/MARS_v1_8#` (you may need to hit enter more than once for the prompt to show up).
+Once the container has been created, enter it by calling `sudo docker attach MARS`. You should see a command line that looks like: `root@b065b587a340:/app/MARS_v1_8#` (you may need to hit enter more than once for the prompt to show up).
 
 If you get an error message saying the container has not been started, call `sudo docker start MARS` then try again.
 
