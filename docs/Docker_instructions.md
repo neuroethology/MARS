@@ -48,7 +48,7 @@ sudo docker image build -t mars-docker .
 ```
 
 ## Start the MARS container
-This also only needs to be done once per session, and uses the MARS-docker image to start a container (an instantiation of an image) within which you can run MARS. Enter the  command:
+This will be done once per session, and uses the MARS-docker image to start a container (an instantiation of an image) within which you can run MARS. Enter the  command:
   ```
   sudo docker run --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix-v /media:/media -p 8888:8888 -dit --name MARS mars-docker bash
   ```
@@ -59,7 +59,7 @@ This also only needs to be done once per session, and uses the MARS-docker image
   - `-e QT_X11_NO_MITSHM=1` and `-v /tmp/.X11-unix:/tmp/.X11-unix` let the gui interface properly with X11 for display rendering- these are also unnecessary if you don't intend to use the gui.
   - `-v /media:/media` will allow your container to access the contents of the `/media` directory on the host machine; the `:/media` part means the contents of `/media` will appear in `/media` within the docker container (modify as desired). If you store your data somewhere else, you should modify this part to `-v /path/to/your/data:/path/within/docker`
   - `-p 8888:8888` sets the port so you can use tensorboard or jupyter within the container via port 8888 (modify port number as desired).
-  - `-dit` starts the container in detached + interactive mode
+  - `-dit` starts the container in detached + interactive mode, and tells the container to stop running when exited.
   - `--name MARS` is the name of the container you're starting (can be anything)
   - `bash` means you'll connect to the bash terminal when you enter the image
 
@@ -71,9 +71,15 @@ This also only needs to be done once per session, and uses the MARS-docker image
   b065b587a340        mars-docker         "/bin/bash"         18 minutes ago      Exited (0) 16 seconds ago                       MARS
   ```
 
-### Enter the MARS container and launch MARS
+## Enter the MARS container and launch MARS
 Once the container has been created, enter it by calling `sudo docker attach MARS`. You should see a command line that looks like: `root@b065b587a340:/app/MARS_v1_8#` (you may need to hit enter more than once for the prompt to show up).
 
 If you get an error message saying the container has not been started, call `sudo docker start MARS` then try again.
 
 To test out MARS, call `python MARS_v1_8.py`. This should launch the MARS gui. If you're getting an error about being unable to access the display, enter the command `xhost local:root` in terminal, then try re-starting the container.
+
+## A few useful Docker commands
+* `sudo docker attach MARS` - enter the MARS image for the first time.
+* `exit` - leave (and stop) from within the MARS image.
+* `sudo docker start MARS` - re-start the MARS image (needed to re-attach.)
+* `sudo docker rm MARS` - delete the MARS image (use if you'd like to re-build it with different settings or from a new version of the MARS container.)
