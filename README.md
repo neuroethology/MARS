@@ -2,7 +2,7 @@
 
 MARS is an end-to-end computational pipeline for **tracking**, **pose estimation**, and **behavior classification** in interacting laboratory mice. MARS version 1.8 can detect attack, mounting, and close investigation behaviors in a standard resident-intruder assay.
 <div align=center>
-![Example MARS output](docs/mars_demo.gif)
+<img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_demo.gif?raw=true'>
 </div>
 
 #### System requirements
