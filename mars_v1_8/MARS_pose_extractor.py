@@ -98,11 +98,11 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 else:
                     rval = False
                     print('video not readable')
-                fps = vc.get(cv2.cv.CV_CAP_PROP_FPS)
+                fps = vc.get(cv2.CAP_PROP_FPS)
                 if np.isnan(fps): fps = 30.
-                NUM_FRAMES = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-                IM_H = vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
-                IM_W = vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
+                NUM_FRAMES = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
+                IM_H = vc.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                IM_W = vc.get(cv2.CAP_PROP_FRAME_WIDTH)
 
             NUM_FRAMES = min(NUM_FRAMES, max_frames)
 
