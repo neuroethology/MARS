@@ -48,7 +48,7 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
         im_w = srTop.header['width']
         im_h = srTop.header['height']
         fps = srTop.header['fps']
-    elif any(x not in ext for x in ['avi','mpg']):
+    elif any(x not in ext for x in ['avi','mpg','mp4']):
         vc = cv2.VideoCapture(top_video_fullpath)
         if vc.isOpened():
             rval = True

@@ -1,7 +1,7 @@
 import sys, os
 from multiprocessing import Queue
 import time
-import argparse
+import yaml
 import MARS_pose_extractor as mpe
 import MARS_feature_extractor as mfe
 import MARS_classification_extractor as mce
@@ -9,28 +9,12 @@ import MARS_classification_machinery as mcm
 import MARS_output_format as mof
 import MARS_create_video as mcv
 import numpy as np
+from MARS_v1_8 import *
 
 
 def get_mars_default_options():
-    default_opts = {'doPose': True,
-                    'doFeats': True,
-                    'doActions': True,
-                    'doVideo': False,
-                    'doOverwrite': False,
-                    'doFront': False,
-                    'doTop': True,
-                    'doToppcf': False,
-                    'useExistingBBoxes': False,
-                    'bboxType': '',
-                    'black_detector_front': 'models/detection/MARS_front_detection_black.pb',
-                    'white_detector_front': 'models/detection/MARS_front_detection_white.pb',
-                    'black_detector_top': 'models/detection/MARS_top_detection_black.pb',
-                    'white_detector_top': 'models/detection/MARS_top_detection_white.pb',
-                    'front_pose_model': 'models/pose/MARS_front_pose.pb',
-                    'top_pose_model': 'models/pose/MARS_top_pose.pb',
-                    'verbose': 1,
-                    'max_frames': 999999,
-                    }
+    with open('config.yml') as f:
+        default_opts = yaml.load(f)
     return default_opts
 
 
@@ -268,10 +252,23 @@ def run_MARS(folders, user_opts={}):
 
     print('Finished processing all the data in the queue!')
     return
+#
+# if __name__ ==  '__main__':
+#     # parser = argparse.ArgumentParser(description='MARS command line', prog='mars')
+#     #TODO: figure out how to handle user options
+#     # parser.add_argument('folders', type=str, help="sequence of folders")
+#
+#     run_MARS(sys.argv[1:])
 
-if __name__ ==  '__main__':
-    # parser = argparse.ArgumentParser(description='MARS command line', prog='mars')
-    #TODO: figure out how to handle user options
-    # parser.add_argument('folders', type=str, help="sequence of folders")
 
-    run_MARS(sys.argv[1:])
+if __name__ == '__main__':
+    # Create the Qt Application
+    app = QApplication(sys.argv)
+
+    # Create and show the form
+    frame = MainWindow()
+    frame.show()
+
+    # Run the main Qt loop
+    sys.exit(app.exec_())
+

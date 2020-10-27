@@ -866,17 +866,3 @@ def get_time():
     t = datetime.datetime.now()
     s = t.strftime('%Y-%m-%d %H:%M:%S.%f')
     return s
-
-
-
-if __name__ == '__main__':
-    # Create the Qt Application
-    app = QApplication(sys.argv)
-
-    # Create and show the form
-    frame = MainWindow()
-    frame.show()
-
-    # Run the main Qt loop
-    sys.exit(app.exec_())
-

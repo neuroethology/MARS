@@ -234,7 +234,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                         ix = f - batch_start
                         if ext == 'seq':
                             img = sr_top.getFrame(f)[0]
-                        elif ext in ['avi','mpg']:
+                        elif ext in ['avi','mpg','mp4']:
                             _, img = vc.read()
                             img = img.astype(np.float32)
 
@@ -326,7 +326,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 print("Saved.\nPose Extracted")
             if ext == 'seq':
                 sr_top.close()
-            elif ext in ['avi','mpg']:
+            elif ext in ['avi','mpg','mp4']:
                 vc.release()  # sr_front.close()
             return
         else:
