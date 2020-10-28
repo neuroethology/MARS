@@ -14,14 +14,7 @@ from multiprocessing import Queue
 import fnmatch
 import time
 import datetime
-import MARS_pose_extractor as mpe
-import MARS_feature_extractor as mfe
-import MARS_classification_extractor as mce
-import MARS_classification_machinery as mcm
-import MARS_output_format as mof
-import MARS_create_video as mcv
-import pdb
-import numpy as np
+from MARS_queue import *
 
 
 QApplication.setStyle('plastique')
@@ -102,7 +95,7 @@ class MainWindow(QMainWindow):
         # self.toolbar.move(5, 5)
         self.toolbar2 = QToolBar("ToolbarExit", self)
         self.toolbar2.addAction(exitAction)
- 
+
 
 
         self.toto = QFrame(self)
@@ -323,7 +316,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(self.fname + ' selected ')
         if os.path.exists(self.fname) and os.path.isdir(self.fname) and self.fname!='':
             files = os.listdir(self.fname)
-            seq_files = [f for f in files if f.endswith('.seq') or f.endswith('.avi')]
+            seq_files = [f for f in files if f.endswith('.seq') or f.endswith('.avi') or f.endswith('.mp4') or f.endswith('.mpg')]
             self.vid_name = self.fname.split('/')[-1]
             #if len(seq_files) >= 2:
             self.VideoName.setText(self.fname)
@@ -350,7 +343,7 @@ class MainWindow(QMainWindow):
             #else:
             #    QMessageBox.information(self, "Not all needed files exists", "Select a folder containing .seq files!")
         else:
-            QMessageBox.information(self, " Wrong file selected", "Select a folder containing .seq files!")
+            QMessageBox.information(self, " Wrong file selected", "No compatible movie files found! Supported formats: .seq, .avi, .mp4, .mpg")
             self.fname = dir_to_use
 
 
@@ -463,7 +456,7 @@ class MainWindow(QMainWindow):
         self.video_chbox.setEnabled(b)
         self.overwrite_chbox.setEnabled(b)
 
-        self.add2queue_btn.setEnabled(b)
+        # self.add2queue_btn.setEnabled(b)
         # self.ddlist.setEnabled(b)
 
         self.front_chbox.setEnabled(b)
@@ -581,277 +574,18 @@ class GenericThread(QtCore.QThread):
         queue = self.args[-2]
 
         # These are the checkboxes used.
-        doPose = self.args[0]
-        doFeats = self.args[1]
-        doActions = self.args[2]
-        doVideo = self.args[3]
-        doOverwrite = self.args[4]
+        mars_opts = {'doPose': self.args[0],
+                     'doFeats': self.args[1],
+                     'doActions': self.args[2],
+                     'doVideo': self.args[3],
+                     'doOverwrite': self.args[4],
+                     'doFront': self.args[5],
+                     'doTop': self.args[6],
+                     'doToppcf': self.args[7]
+                     }
 
-        doFront = self.args[5]
-        doTop = self.args[6]
-        doToppcf = self.args[7]
+        mars_queue_engine(queue, mars_opts, 'gui', gui_handle=self)
 
-        root_count = 0 # A counter for the number of paths we've processed.
-
-        while not (queue.empty()):
-            # While there are still things in the queue...
-            time.sleep(0.5) # (This pause exists to let us see things happening in the GUI.)
-
-            # Get the next path.
-            root_path = queue.get()
-
-            # This is a counter for the number of files in this path we've processed. After we reach MAX_FILE_LOGS,
-            #   we clear everything. Set MAX_FILE_LOGS to -1 to avoid this feature.
-            count = 0
-            MAX_FILE_LOGS = 4
-
-            msg = "Processing root path " + str(root_count) + " : " + root_path + "\n"
-            self.update_progress.emit(msg,msg)
-            trials_to_run = []
-            fullpaths = []
-
-            # Walk through the subdirectories and get trials to process.
-            for path, subdirs, filenames in os.walk(root_path):
-                for numv,fname in enumerate(filenames):
-                    cond1 = all(x not in fname for x in ['.seq','.avi','.mpg'])
-                    cond2 = 'skipped' in path
-                    cond3 = 'Top' not in fname
-                    if cond1|cond2|cond3:
-                        continue
-
-                    if 'Top' in fname:
-                        front_fname, top_fname, mouse_name  = mof.get_names(fname)
-                        if top_fname != fname: continue
-                        fullpath_to_front = os.path.join(path, front_fname)
-                        fullpath_to_top = os.path.join(path, top_fname)
-                        cond1 = not (os.path.exists(fullpath_to_front))
-                        cond2 = doFront
-                        cond3 = not doTop
-                        cond4 = not doToppcf
-                        # If the front video doesn't exist and we need it, continue.
-                        if (cond1 and cond2):#|(cond3 and cond4):
-                            continue
-                    elif 'Front' in fname:
-                        front_fname = fname
-                        front_fname, top_fname, mouse_name = mof.get_names(front_fname)
-                        # if front_fname != fname: continue
-                        fullpath_to_top = os.path.join(path, top_fname)
-                        fullpath_to_front = os.path.join(path, front_fname)
-                        cond1 = not (os.path.exists(fullpath_to_top))
-                        cond2 = doTop
-                        cond3 = not doFront
-                        cond4 = not doToppcf
-
-                        if (cond1 and cond2 and cond4)|cond3:
-                            continue
-                    else:
-                        # This is a seq file, but doesnt have "Top" or "Front" in it. Let's skip it.
-                        continue
-
-                    # Save the paths we want to use.
-                    mouse_trial = dict()
-                    mouse_trial['top'] = fullpath_to_top
-                    mouse_trial['front'] = fullpath_to_front
-                    trials_to_run.append(mouse_trial)
-                    fullpaths.append(fullpath_to_top)
-
-            # Get the indices to sort the trials by.
-            idxs = np.argsort(fullpaths)
-
-            # Sort the trials.
-            placeholder = [trials_to_run[idx] for idx in idxs]
-            trials_to_run = placeholder
-
-            # Get the number of videos we're going to process, to give people an impression of time.
-            total_valid_videos = len(trials_to_run)
-            # Update our global progress bar.
-            self.update_big_progbar_sig.emit(0, total_valid_videos-1)
-            videos_processed = 0
-            for trial in trials_to_run:
-                try:
-                    fullpath_to_top = trial['top']
-                    fullpath_to_front = trial['front']
-
-                    top_fname = os.path.basename(fullpath_to_top)
-                    front_fname = os.path.basename(fullpath_to_front)
-
-                    cumulative_progress = ' '.join([" |",
-                                                    str(videos_processed + 1),
-                                                    "out of",
-                                                    str(total_valid_videos), "total videos"])
-
-                    self.update_progress.emit('Processing ' + top_fname + cumulative_progress ,
-                                              'Processing ' + top_fname + cumulative_progress + ' \n')
-
-                    if doPose:
-
-                        if doFront:
-                            self.update_progress.emit("Extracting front pose from " + front_fname,
-                                                      "Extracting front pose .... ")
-                            # Extract the front pose.
-                            mpe.extract_pose_wrapper(video_fullpath=fullpath_to_front,
-                                                     view= 'front',
-                                                     doOverwrite=doOverwrite,
-                                                     progress_bar_signal=self.update_progbar_sig,
-                                                     verbose=0)
-
-                            self.update_progress.emit('', "saved.\n")
-
-                        if doTop or doToppcf:
-                            self.update_progress.emit("Extracting op pose from " + top_fname ,
-                                                      "Extracting top pose .... ")
-                            # Extract the front pose.
-                            mpe.extract_pose_wrapper(video_fullpath=fullpath_to_top,
-                                                     view= 'top',
-                                                     doOverwrite=doOverwrite,
-                                                     progress_bar_signal=self.update_progbar_sig,
-                                                     verbose=0)
-
-                            self.update_progress.emit('', "saved.\n")
-
-                        if not (doFront|doTop|doToppcf):
-                            view_msg = "ERROR: You need to select at least one view to use."
-                            raise ValueError(view_msg)
-
-                    if doFeats:
-                        # TODO: If we wanted to do something special with the Front and Top views, we'd do it here.
-                        # if doFront and doTop:
-                        #     # Notify the GUI that feature extraction is starting.
-                        #     self.update_progress.emit('Extracting features', 'Extracting features ....\n')
-                        #
-                        #     # Extract the features.
-                        #     mfe.extract_both_features_wrapper(top_video_fullpath = fullpath_to_top,
-                        #                                     front_video_fullpath = fullpath_to_front,
-                        #                                     doOverwrite=doOverwrite,
-                        #                                     output_suffix='')
-                        #
-                        #     # Notify the GUI that Features were extracted.
-                        #     self.update_progress.emit('', 'Features saved\n')
-                        #     self.update_th.emit(2)
-                        if doTop:
-                            self.update_progress.emit('Extracting top features from '+ top_fname ,
-                                                      'Extracting top features  ....  ')
-
-                            # Extract the features.
-                            mfe.extract_top_features_wrapper(top_video_fullpath = fullpath_to_top,
-                                                            doOverwrite=doOverwrite,
-                                                            progress_bar_sig=self.update_progbar_sig,
-                                                            output_suffix='')
-
-                            # Notify the GUI that Features were extracted.
-                            self.update_progress.emit('', 'Saved\n')
-                            self.update_th.emit(2)
-
-                        if doToppcf:
-                            self.update_progress.emit('Extracting top pcf features from '+ top_fname ,
-                                                      'Extracting top pcf features .... ')
-                            # Extract the features.
-                            mfe.extract_top_pcf_features_wrapper(top_video_fullpath=fullpath_to_top,
-                                                                front_video_fullpath=fullpath_to_front,
-                                                                doOverwrite=doOverwrite,
-                                                                progress_bar_sig=self.update_progbar_sig,
-                                                                output_suffix='')
-
-                            # Notify the GUI that Features were extracted.
-                            self.update_progress.emit('', 'Saved\n')
-                            self.update_th.emit(2)
-
-                        if doFront:
-                            self.update_progress.emit('Extracting front features from '+ front_fname,
-                                                      'Extracting front features ....  ')
-
-                            # # Extract the features.
-                            mfe.extract_front_features_wrapper(top_video_fullpath = fullpath_to_top,
-                                                            front_video_fullpath = fullpath_to_front,
-                                                            progress_bar_sig=self.update_progbar_sig,
-                                                            doOverwrite=doOverwrite,
-                                                            output_suffix='')
-
-                            # Notify the GUI that Features were extracted.
-                            self.update_progress.emit('', 'Saved\n')
-                            self.update_th.emit(2)
-                        if not (doTop | doToppcf):
-                            view_msg = "Warning: You need to include a top view to use the classifier later."
-                            raise Warning(view_msg)
-
-                    if doActions:
-                        if doToppcf:
-                            # allowed_classifier=["top pcf mlp","top pcf xgb", "top pcf mlp wnd","top pcf xgb wnd"]
-                            # if not classifier_to_use in allowed_classifier:
-                            #     print('Selected not allowed classifier, default classifier will be used')
-                            self.update_progress.emit('Prediting top pcf actions from ' + top_fname,
-                                                      'Predicting top pcf actions ....  ')
-                            # TODO: Don't hardcode this maybe?
-                            classifier_type='top_pcf_tm_xgb500_wnd'
-
-                            mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
-                                                         front_video_fullpath='',
-                                                         doOverwrite=doOverwrite,
-                                                         view='toppcf',
-                                                         classifier_path='models/classifier/' + classifier_type)
-                            self.update_progress.emit('', "Saved\n")
-                            self.update_th.emit(3)
-
-                        if doTop:
-                            self.update_progress.emit('Prediting top actions from ' + top_fname,
-                                                      'Predicting top actions ....  ')
-                            # TODO: Don't hardcode this maybe?
-
-                            classifier_type='top_tm_xgb500_wnd'
-
-                            mce.classify_actions_wrapper(top_video_fullpath= fullpath_to_top,
-                                                            front_video_fullpath='',
-                                                            doOverwrite=doOverwrite,
-                                                            view='top',
-                                                            classifier_path='models/classifier/' + classifier_type)
-                            self.update_progress.emit('', "saved.\n")
-                            self.update_th.emit(3)
-                            # TODO: If you wanted to do something special with combined classification output, you'd do it here
-                        if not doTop and not doToppcf:
-                            view_msg = "ERROR: You need to select a top view to classify."
-                            raise ValueError(view_msg)
-                        mcm.dump_bento(video_fullpath=fullpath_to_top,
-                                       basepath=root_path)
-
-                    if doVideo:
-                        if not (doFront | doTop | doToppcf):
-                            view_msg = "ERROR: You need to select a view."
-                            raise ValueError(view_msg)
-                        else:
-                            # TODO: Don't hardcode this maybe?
-                            classifier_type='top_pcf_tm_xgb500_wnd' if doToppcf else 'top_tm_xgb500_wnd'
-
-                            self.update_progress.emit('Creating results video from ' + top_fname,
-                                                      'Creating results video .... ')
-                            mcv.create_video_results_wrapper(top_video_fullpath=fullpath_to_top,
-                                                             classifier_path='models/classifier/' + classifier_type,
-                                                             progress_bar_signal=self.update_progbar_sig,
-                                                             view='top',
-                                                             doOverwrite=doOverwrite,
-                                                             )
-                            self.update_progress.emit('', 'saved\n')
-                            self.update_th.emit(4)
-
-                    # self.update_progress.emit(fname + ' done ', 'Done\n')
-                    self.done_th.emit()
-                    count += 1
-                    videos_processed += 1
-                    self.update_big_progbar_sig.emit(videos_processed,0)
-                    if count == MAX_FILE_LOGS:
-                        time.sleep(0.5)
-                        self.clear_sig.emit()
-                        count = 0
-
-                except Exception as e:
-                    print(e)
-                    error_msg = 'ERROR: ' + os.path.join(path,fname) + ' has failed. \n' + str(e)
-                    self.update_progress.emit(error_msg, error_msg + ' \n')
-                    continue
-                            # End of try-except block
-                        # End of particular fname
-                    # End of the particular root_path
-            root_count += 1
-            # End of the queue while loop
         self.clear_sig.emit()
         self.done_queue.emit()
         queue_msg =  'Finished processing all the data in the queue.\n'

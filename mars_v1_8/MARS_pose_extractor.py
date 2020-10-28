@@ -178,7 +178,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 for f in range(NUM_FRAMES):
                     if ext == 'seq':
                         img = sr_top.getFrame(f)[0]
-                    elif ext in ['ave', 'mpg']:
+                    elif ext in ['avi', 'mpg', 'mp4']:
                         _, img = vc.read()
                         img = img.astype(np.float)
                     q_start_to_predet.put([img,bboxes[f]])
