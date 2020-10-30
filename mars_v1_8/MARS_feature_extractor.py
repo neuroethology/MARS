@@ -47,7 +47,6 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
     im_h = reader.IM_H
     im_w = reader.IM_W
     fps = reader.fps
-
     num_frames = min(num_frames, max_frames)
 
     pix_per_cm = 37.79527606671214
@@ -2399,6 +2398,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                 fFr = syncTopFront(f,num_frames,num_framesf) if flag_align else f
                 fr = readerf.getFrame(fFr)
                 fr = fr.astype(np.float32)
+
                 track['data_smooth'][0, f, ind5] = np.mean(fr)
                 track['data_smooth'][0, f, ind6] = np.std(fr)
 
@@ -2423,6 +2423,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
 
                 frame2 = readerf.getFrame(fFr)
                 frame2 = frame2.astype(np.float32)
+
                 df = np.abs(frame2 - frame1)
                 dfm = np.mean(df * df)
                 track['data_smooth'][0, f, ind1] = dfm / (imgMean ** 2)
@@ -2467,7 +2468,6 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
 
                     frame1f = readerf.getFrame(fFr - 1)
                     frame1f = frame1f.astype(np.float32)
-
                     frame1u = frame1
                 else:
                     frame1 = frame2
@@ -3935,6 +3935,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
 
                 frame2 = readerf.getFrame(f)
                 frame2 = frame2.astype(np.float32)
+              
                 df = np.abs(frame2 - frame1)
                 dfm = np.mean(df * df)
                 track['data_smooth'][0, f, ind1] = dfm / (imgMean ** 2)

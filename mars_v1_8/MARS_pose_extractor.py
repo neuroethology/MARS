@@ -95,6 +95,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
             if mars_opts['bgSubtract']:
                 medianFrame = get_median_frame(vc,'cv2')
 
+
             NUM_FRAMES = min(NUM_FRAMES, max_frames)
 
             # unpack user-provided bounding boxes if they exist:
