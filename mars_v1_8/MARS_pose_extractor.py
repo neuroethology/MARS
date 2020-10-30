@@ -98,11 +98,11 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 else:
                     rval = False
                     print('video not readable')
-                fps = vc.get(cv2.cv.CV_CAP_PROP_FPS)
+                fps = vc.get(cv2.CAP_PROP_FPS)
                 if np.isnan(fps): fps = 30.
-                NUM_FRAMES = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-                IM_H = vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
-                IM_W = vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
+                NUM_FRAMES = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
+                IM_H = vc.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                IM_W = vc.get(cv2.CAP_PROP_FRAME_WIDTH)
 
             NUM_FRAMES = min(NUM_FRAMES, max_frames)
 
@@ -178,7 +178,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 for f in range(NUM_FRAMES):
                     if ext == 'seq':
                         img = sr_top.getFrame(f)[0]
-                    elif ext in ['ave', 'mpg']:
+                    elif ext in ['avi', 'mpg', 'mp4']:
                         _, img = vc.read()
                         img = img.astype(np.float)
                     q_start_to_predet.put([img,bboxes[f]])
@@ -234,7 +234,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                         ix = f - batch_start
                         if ext == 'seq':
                             img = sr_top.getFrame(f)[0]
-                        elif ext in ['avi','mpg']:
+                        elif ext in ['avi','mpg','mp4']:
                             _, img = vc.read()
                             img = img.astype(np.float32)
 
@@ -326,7 +326,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 print("Saved.\nPose Extracted")
             if ext == 'seq':
                 sr_top.close()
-            elif ext in ['avi','mpg']:
+            elif ext in ['avi','mpg','mp4']:
                 vc.release()  # sr_front.close()
             return
         else:
