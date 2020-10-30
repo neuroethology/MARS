@@ -6,7 +6,7 @@ MARS is an end-to-end computational pipeline for **tracking**, **pose estimation
 </div>
 
 #### System requirements
-MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU; MARS runs fastest on NVIDIA GPUs with at least 10Gb memory.
+MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU.
 
 #### Data requirements
 MARS v1.8 works on top-view videos featuring pairs of interacting mice, with a black resident mouse and a white intruder mouse. MARS can be run on unoperated mice, or on videos in which one mouse has been implanted with a **cable-attached device** such as a microendoscope or fiberphotometry/optogenetic fiber.
@@ -24,7 +24,6 @@ The following instructions cover GPU setup and creation of the MARS conda enviro
 |---|:---:|
 |Linux + NVIDIA | [link](docs/install_linux_nvidia.md) |
 |Windows + NVIDIA | [link](docs/install_windows_nvidia.md) |
-|Windows + other | [link](docs/) - TODO |
 |Mac | [link](docs/) - TODO |
 
 
