@@ -91,6 +91,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 IM_H = sr_top.header['height']
                 IM_W = sr_top.header['width']
                 sr_top.buildSeekTable()
+                medianFrame = get_median_frame(sr_top)
             elif ext in ['avi','mpg','mp4']:
                 vc = cv2.VideoCapture(video_fullpath)
                 if vc.isOpened():
@@ -103,6 +104,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 NUM_FRAMES = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
                 IM_H = vc.get(cv2.CAP_PROP_FRAME_HEIGHT)
                 IM_W = vc.get(cv2.CAP_PROP_FRAME_WIDTH)
+                medianFrame = get_median_frame(vc)
 
             NUM_FRAMES = min(NUM_FRAMES, max_frames)
 
@@ -148,7 +150,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                     results_predet = pool.apply_async(pre_det,
                                                     (q_start_to_predet,
                                                     q_predet_to_det, q_predet_to_prehm,
-                                                        IM_H, IM_W))
+                                                        medianFrame, IM_H, IM_W))
                     results_det = pool.apply_async(run_det,
                                                 (q_predet_to_det,q_det_to_postdet,
                                                     view, mars_opts))
