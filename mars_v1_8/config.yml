@@ -27,6 +27,10 @@ doTop: True
 doFront: False
 doToppcf: False
 
+# enable background-subtraction prior to mouse detection/pose estimation. This is an experimental feature, it might
+# help MARS to do a better job in arenas it hasn't seen before?
+bgSubtract: False
+
 # import bounding boxes produced by a different system, and use these instead of MARS's detection step.
 # this feature is still in development. If set to true, bboxType tells MARS how to unpack the user-provided boxes.
 useExistingBBoxes: False

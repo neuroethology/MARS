@@ -16,7 +16,7 @@ import time
 sys.path.append('./')
 
 import MARS_output_format as mof
-from util.seqIo import *
+from util.genericVideo import *
 from MARS_detection_unpackers import *
 
 
@@ -60,7 +60,8 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
     # Makes the output directory, if it doesn't exist.
     mof.getdir(output_folder)
     
-    ext = video_name[-3:]
+    _,ext = os.path.splitext(video_fullpath)
+    ext=ext[1:] # get rid of the dot.
 
     already_extracted_msg = (
         '1 - Pose already extracted. Change your settings to override, if you still want to extract the pose.')
@@ -85,26 +86,14 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 return
 
             # create the movie reader:
-            if ext == 'seq':
-                sr_top = seqIo_reader(video_fullpath)
-                NUM_FRAMES = sr_top.header['numFrames']
-                IM_H = sr_top.header['height']
-                IM_W = sr_top.header['width']
-                sr_top.buildSeekTable()
-                medianFrame = get_median_frame(sr_top)
-            elif ext in ['avi','mpg','mp4']:
-                vc = cv2.VideoCapture(video_fullpath)
-                if vc.isOpened():
-                    rval = True
-                else:
-                    rval = False
-                    print('video not readable')
-                fps = vc.get(cv2.CAP_PROP_FPS)
-                if np.isnan(fps): fps = 30.
-                NUM_FRAMES = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
-                IM_H = vc.get(cv2.CAP_PROP_FRAME_HEIGHT)
-                IM_W = vc.get(cv2.CAP_PROP_FRAME_WIDTH)
-                medianFrame = get_median_frame(vc)
+            reader = vidReader(video_fullpath)
+            NUM_FRAMES = reader.NUM_FRAMES
+            IM_H = reader.IM_H
+            IM_W = reader.IM_W
+            fps = reader.fps
+            medianFrame = []
+            if mars_opts['bgSubtract']:
+                medianFrame = get_median_frame(vc,'cv2')
 
             NUM_FRAMES = min(NUM_FRAMES, max_frames)
 
@@ -178,11 +167,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                     progress_bar_signal.emit(0, NUM_FRAMES)
 
                 for f in range(NUM_FRAMES):
-                    if ext == 'seq':
-                        img = sr_top.getFrame(f)[0]
-                    elif ext in ['avi', 'mpg', 'mp4']:
-                        _, img = vc.read()
-                        img = img.astype(np.float)
+                    img = reader.getFrame(f)
                     q_start_to_predet.put([img,bboxes[f]])
 
                 # Push through the poison pill.
@@ -234,11 +219,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                             process_time_start_0 = time.perf_counter()
 
                         ix = f - batch_start
-                        if ext == 'seq':
-                            img = sr_top.getFrame(f)[0]
-                        elif ext in ['avi','mpg','mp4']:
-                            _, img = vc.read()
-                            img = img.astype(np.float32)
+                        img = reader.getFrame(f)
 
                         if time_steps:
                             process_time_1a = time.perf_counter()
@@ -326,10 +307,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
 
             if verbose:
                 print("Saved.\nPose Extracted")
-            if ext == 'seq':
-                sr_top.close()
-            elif ext in ['avi','mpg','mp4']:
-                vc.release()  # sr_front.close()
+            reader.close()
             return
         else:
             if verbose:

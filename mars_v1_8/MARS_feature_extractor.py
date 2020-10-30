@@ -20,7 +20,7 @@ import scipy.io as sio
 import numpy.core.records as npc
 warnings.filterwarnings('ignore')
 sys.path.append('./')
-from util.seqIo import *
+from util.genericVideo import *
 from MARS_feature_machinery import *
 import MARS_output_format as mof
 
@@ -42,25 +42,12 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
     # align frames
     ext = top_video_fullpath[-3:]
 
-    if ext =='seq':
-        srTop = seqIo_reader(top_video_fullpath)
-        num_frames = srTop.header['numFrames']
-        im_w = srTop.header['width']
-        im_h = srTop.header['height']
-        fps = srTop.header['fps']
-    elif any(x not in ext for x in ['avi','mpg','mp4']):
-        vc = cv2.VideoCapture(top_video_fullpath)
-        if vc.isOpened():
-            rval = True
-        else:
-            rval = False
-            print('video not readable')
-        fps = vc.get(cv2.CAP_PROP_FPS)
-        if np.isnan(fps): fps = 30.
-        num_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
-        im_h = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        im_w = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
-    
+    reader = vidReader(top_video_fullpath)
+    num_frames = reader.NUM_FRAMES
+    im_h = reader.IM_H
+    im_w = reader.IM_W
+    fps = reader.fps
+
     num_frames = min(num_frames, max_frames)
 
     pix_per_cm = 37.79527606671214
@@ -1078,21 +1065,13 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
                     progress_bar_sig.emit(f,0)
 
                 if f == 1:
-                    if ext=='seq':
-                        frame1 = srTop.getFrame(f - 1)[0]
-                    else:
-                        vc.set(cv2.CAP_PROP_POS_FRAMES, f-1)
-                        _, frame1 = vc.read()
-                        frame1 = frame1.astype(np.float32)
+                    frame1 = reader.getFrame(f-1)
+                    frame1 = frame1.astype(np.float32)
                 else:
                     frame1 = frame2
 
-                if ext == 'seq':
-                    frame2 = srTop.getFrame(f)[0]
-                else:
-                    vc.set(cv2.CAP_PROP_POS_FRAMES, f)
-                    _, frame2 = vc.read()
-                    frame2 = frame2.astype(np.float32)
+                frame2 = reader.getFrame(f)
+                frame2 = frame2.astype(np.float32)
 
                 if 'pixel_change' in features:
                     track['data'][0, f, ind] = (np.sum((frame2 - frame1) ** 2)) / float((np.sum((frame1) ** 2)))
@@ -1353,10 +1332,7 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
         # del track['bbox_front']
         # del track['keypoints']
         # del track['keypoints_front']
-        if ext == 'seq':
-            srTop.close()
-        else:
-            vc.release()  # sr_front.close()ont.close()
+        reader.close()
         return track
     except Exception as e:
         import linecache
@@ -1369,10 +1345,7 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
         line = linecache.getline(filename, lineno, f.f_globals)
         print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
         print(e)
-        if ext == 'seq':
-            srTop.close()
-        else:
-            vc.release()  # sr_front.close()
+        reader.close()
         return []
 
 
@@ -1382,47 +1355,23 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
     num_points = len(frames_pose['scores'][0][0])
     # align frames
 
-    ext = top_video_fullpath[-3:]
-    if ext == 'seq':
-        srTop = seqIo_reader(top_video_fullpath)
-        num_frames = srTop.header['numFrames']
-        im_w = srTop.header['width']
-        im_h = srTop.header['height']
-        fps = srTop.header['fps']
-    elif any(x not in ext for x in ['avi', 'mpg']):
-        vc = cv2.VideoCapture(top_video_fullpath)
-        if vc.isOpened():
-            rval = True
-        else:
-            rval = False
-            print('video not readable')
-        fps = vc.get(cv2.CAP_PROP_FPS)
-        if np.isnan(fps): fps = 30.
-        num_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
-        im_h = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        im_w = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
+    _,ext = os.path.splitext(top_video_fullpath)
+    ext=ext[1:]
+    reader = vidReader(top_video_fullpath)
+    num_frames = reader.NUM_FRAMES
+    im_h = reader.IM_H
+    im_w = reader.IM_W
+    fps = reader.fps
     
     num_frames = min(num_frames, max_frames)
 
-    extf = front_video_fullpath[-3:]
-    if extf == 'seq':
-        srFront = seqIo_reader(front_video_fullpath)
-        num_framesf = srFront.header['numFrames']
-        im_wf = srFront.header['width']
-        im_hf = srFront.header['height']
-        fpsf = srFront.header['fps']
-    elif any(x not in extf for x in ['avi', 'mpg']):
-        vcf = cv2.VideoCapture(front_video_fullpath)
-        if vcf.isOpened():
-            rval = True
-        else:
-            rval = False
-            print('video not readable')
-        fpsf = vcf.get(cv2.CAP_PROP_FPS)
-        if np.isnan(fpsf): fpsf = 30.
-        num_framesf = int(vcf.get(cv2.CAP_PROP_FRAME_COUNT))
-        im_hf = int(vcf.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        im_wf = int(vcf.get(cv2.CAP_PROP_FRAME_WIDTH))
+    _,extf = os.path.splitext(front_video_fullpath)
+    extf = extf[1:]
+    readerf = vidReader(front_video_fullpath)
+    num_framesf = readerf.NUM_FRAMES
+    im_wf = readerf.IM_W
+    im_hf = readerf.IM_H
+    fpsf = readerf.fps
 
     num_framesf = min(num_framesf, max_frames)
 
@@ -2448,12 +2397,8 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
 
             for f in range(num_frames):
                 fFr = syncTopFront(f,num_frames,num_framesf) if flag_align else f
-                if extf == 'seq':
-                    fr = srFront.getFrame(fFr)[0]
-                else:
-                    vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr)
-                    _, fr = vcf.read()
-                    fr = fr.astype(np.float32)
+                fr = readerf.getFrame(fFr)
+                fr = fr.astype(np.float32)
                 track['data_smooth'][0, f, ind5] = np.mean(fr)
                 track['data_smooth'][0, f, ind6] = np.std(fr)
 
@@ -2471,21 +2416,13 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                 imgMean = track['data_smooth'][0, f - 1, ind5]
                 imgStd = track['data_smooth'][0, f - 1, ind6]
                 if f == 1:
-                    if extf == 'seq':
-                        frame1 = srFront.getFrame(fFr - 1)[0]
-                    else:
-                        vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr-1)
-                        _, frame1 = vcf.read()
-                        frame1 = frame1.astype(np.float32)
+                    frame1 = readerf.getFrame(fFr - 1)
+                    frame1 = frame1.astype(np.float32)
                 else:
                     frame1 = frame2
 
-                if extf == 'seq':
-                    frame2 = srFront.getFrame(fFr)[0]
-                else:
-                    vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr)
-                    _, frame2 = vcf.read()
-                    frame2 = frame2.astype(np.float32)
+                frame2 = readerf.getFrame(fFr)
+                frame2 = frame2.astype(np.float32)
                 df = np.abs(frame2 - frame1)
                 dfm = np.mean(df * df)
                 track['data_smooth'][0, f, ind1] = dfm / (imgMean ** 2)
@@ -2525,20 +2462,11 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
 
                 fFr = syncTopFront(f,num_frames,num_framesf) if flag_align else f
                 if f == 1:
+                    frame1 = reader.getFrame(f - 1)
+                    frame1 = frame1.astype(np.float32)
 
-                    if ext=='seq':
-                        frame1 = srTop.getFrame(f - 1)[0]
-                    else:
-                        vc.set(cv2.CAP_PROP_POS_FRAMES, f-1)
-                        _, frame1 = vc.read()
-                        frame1 = frame1.astype(np.float32)
-
-                    if extf == 'seq':
-                        frame1f = srFront.getFrame(fFr - 1)[0]
-                    else:
-                        vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr-1)
-                        _, frame1f = vcf.read()
-                        frame1f = frame1f.astype(np.float32)
+                    frame1f = readerf.getFrame(fFr - 1)
+                    frame1f = frame1f.astype(np.float32)
 
                     frame1u = frame1
                 else:
@@ -2546,20 +2474,11 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                     frame1f = frame2f
                     frame1u = frame2
 
+                frame2 = reader.getFrame(f)
+                frame2 = frame2.astype(np.float32)
 
-                if ext == 'seq':
-                    frame2 = srTop.getFrame(f)[0]
-                else:
-                    vc.set(cv2.CAP_PROP_POS_FRAMES, f)
-                    _, frame2 = vc.read()
-                    frame2 = frame2.astype(np.float32)
-
-                if extf == 'seq':
-                    frame2f = srFront.getFrame(fFr)[0]
-                else:
-                    vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr)
-                    _, frame2f = vcf.read()
-                    frame2f = frame2f.astype(np.float32)
+                frame2f = readerf.getFrame(fFr)
+                frame2f = frame2f.astype(np.float32)
                 frame2u = frame2
 
 
@@ -2832,14 +2751,8 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         # del track['bbox_front']
         # del track['keypoints']
         # del track['keypoints_front']
-        if ext == 'seq':
-            srTop.close()
-        else:
-            vc.release()
-        if extf == 'seq':
-            srFront.close()
-        else:
-            vcf.release()
+        reader.close()
+        readerf.close()
         return track
     except Exception as e:
         import linecache
@@ -2852,14 +2765,8 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         line = linecache.getline(filename, lineno, f.f_globals)
         print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
         print(e)
-        if ext == 'seq':
-            srTop.close()
-        else:
-            vc.release()
-        if extf == 'seq':
-            srFront.close()
-        else:
-            vcf.release()
+        reader.close()
+        readerf.close()
         return []
 
 
@@ -2872,49 +2779,24 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
     #     frames_pose_front = json.load(fp)
     num_points = len(frames_pose['scores'][0][0])
     # align frames
-    ext = top_video_fullpath[-3:]
-    if ext == 'seq':
-        srTop = seqIo_reader(top_video_fullpath)
-        num_frames = srTop.header['numFrames']
-        im_w = srTop.header['width']
-        im_h = srTop.header['height']
-        fps = srTop.header['fps']
-        srTop.close()
-    elif any(x not in ext for x in ['avi', 'mpg']):
-        vc = cv2.VideoCapture(top_video_fullpath)
-        if vc.isOpened():
-            rval = True
-        else:
-            rval = False
-            print('video not readable')
-        fps = vc.get(cv2.CAP_PROP_FPS)
-        if np.isnan(fps): fps = 30.
-        num_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
-        im_h = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        im_w = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
-        vc.release()
-    
+    _,ext = os.path.splitext(top_video_fullpath)
+    ext=ext[1:]
+    reader = vidReader(top_video_fullpath)
+    num_frames = reader.NUM_FRAMES
+    im_w = reader.IM_W
+    im_h = reader.IM_H
+    fps = reader.fps
+    reader.close()
+
     num_frames = min(num_frames, max_frames)
 
-    extf = front_video_fullpath[-3:]
-    if extf == 'seq':
-        srFront = seqIo_reader(front_video_fullpath)
-        num_framesf = srFront.header['numFrames']
-        im_wf = srFront.header['width']
-        im_hf = srFront.header['height']
-        fpsf = srFront.header['fps']
-    elif any(x not in extf for x in ['avi', 'mpg']):
-        vcf = cv2.VideoCapture(front_video_fullpath)
-        if vcf.isOpened():
-            rval = True
-        else:
-            rval = False
-            print('video not readable')
-        fpsf = vcf.get(cv2.CAP_PROP_FPS)
-        if np.isnan(fpsf): fpsf = 30.
-        num_framesf = int(vcf.get(cv2.CAP_PROP_FRAME_COUNT))
-        im_hf = int(vcf.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        im_wf = int(vcf.get(cv2.CAP_PROP_FRAME_WIDTH))
+    _,extf = os.path.splitext(front_video_fullpath)
+    extf=extf[1:]
+    readerf = vidReader(front_video_fullpath)
+    num_framesf = readerf.NUM_FRAMES
+    im_wf = readerf.IM_W
+    im_hf = readerf.IM_H
+    fpsf = readerf.fps
 
     pix_per_cm = 37.79527606671214
     smooth_kernel = np.array([1, 2, 1]) / 4.
@@ -4030,12 +3912,8 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
             ind6 = features.index('imgStd')
 
             for f in range(num_frames):
-                if extf == 'seq':
-                    fr = srFront.getFrame(f)[0]
-                else:
-                    vcf.set(cv2.CAP_PROP_POS_FRAMES, f)
-                    _, fr = vcf.read()
-                    fr = fr.astype(np.float32)
+                fr = readerf.getFrame(f)
+                fr = fr.astype(np.float32)
                 track['data_smooth'][0, f, ind5] = np.mean(fr)
                 track['data_smooth'][0, f, ind6] = np.std(fr)
 
@@ -4050,21 +3928,13 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                 imgMean = track['data_smooth'][0, f - 1, ind5]
                 imgStd = track['data_smooth'][0, f - 1, ind6]
                 if f == 1:
-                    if extf == 'seq':
-                        frame1 = srFront.getFrame(f - 1)[0]
-                    else:
-                        vcf.set(cv2.CAP_PROP_POS_FRAMES, f-1)
-                        _, frame1 = vcf.read()
-                        frame1 = frame1.astype(np.float32)
+                    frame1 = readerf.getFrame(f - 1)
+                    frame1 = frame1.astype(np.float32)
                 else:
                     frame1 = frame2
 
-                if extf == 'seq':
-                    frame2 = srFront.getFrame(f)[0]
-                else:
-                    vcf.set(cv2.CAP_PROP_POS_FRAMES, f)
-                    _, frame2 = vcf.read()
-                    frame2 = frame2.astype(np.float32)
+                frame2 = readerf.getFrame(f)
+                frame2 = frame2.astype(np.float32)
                 df = np.abs(frame2 - frame1)
                 dfm = np.mean(df * df)
                 track['data_smooth'][0, f, ind1] = dfm / (imgMean ** 2)
@@ -4101,21 +3971,13 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                     progress_bar_sig.emit(pr[f],0)
 
                 if f == 1:
-                    if extf == 'seq':
-                        frame1f = srFront.getFrame(f - 1)[0]
-                    else:
-                        vcf.set(cv2.CAP_PROP_POS_FRAMES, f - 1)
-                        _, frame1f = vcf.read()
-                        frame1f = frame1f.astype(np.float32)
+                    frame1f = reader.getFrame(f - 1)
+                    frame1f = frame1f.astype(np.float32)
                 else:
                     frame1f = frame2f
 
-                if extf == 'seq':
-                    frame2f = srFront.getFrame(f)[0]
-                else:
-                    vcf.set(cv2.CAP_PROP_POS_FRAMES, f)
-                    _, frame2f = vcf.read()
-                    frame2f = frame2f.astype(np.float32)
+                frame2f = readerf.getFrame(f)
+                frame2f = frame2f.astype(np.float32)
 
                 if 'pixel_change' in features:
                     track['data'][0, f, ind] = (np.sum((frame2f - frame1f) ** 2)) / float((np.sum((frame1f) ** 2)))
@@ -4253,10 +4115,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
         # del track['bbox_front']
         # del track['keypoints']
         # del track['keypoints_front']
-        if extf == 'seq':
-            srFront.close()
-        else:
-            vcf.release()
+        readerf.close()
         return track
     except Exception as e:
         import linecache
@@ -4269,10 +4128,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
         line = linecache.getline(filename, lineno, f.f_globals)
         print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
         print(e)
-        if extf == 'seq':
-            srFront.close()
-        else:
-            vcf.release()
+        readerf.close()
         return []
     
 
