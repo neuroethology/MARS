@@ -1,0 +1,39 @@
+# these are the default settings that MARS will use if you don't override them
+
+# relative paths to the default models used for detection and pose estimation.
+black_detector_front: models/detection/MARS_front_detection_black.pb
+white_detector_front: models/detection/MARS_front_detection_white.pb
+black_detector_top: models/detection/MARS_top_detection_black.pb
+white_detector_top: models/detection/MARS_top_detection_white.pb
+front_pose_model: models/pose/MARS_front_pose.pb
+top_pose_model: models/pose/MARS_top_pose.pb
+
+# which stages of analysis to run- pose estimation, feature extraction, and behavior classification
+doPose: True
+doFeats: False
+doActions: False
+
+# enable to have MARS save a video of the resulting pose estimation
+doVideo: False
+
+# overwrite any existing pose/feature/annotation files for a given video
+doOverwrite: True
+
+# type of pose/behavior features to extract:
+# doTop = estimate pose and extract features from top-camera only
+# doFront = pose+features from both top and front cameras
+# doToppcf = pose from top video, but include pixel-based features from front video
+doTop: True
+doFront: False
+doToppcf: False
+
+# import bounding boxes produced by a different system, and use these instead of MARS's detection step.
+# this feature is still in development. If set to true, bboxType tells MARS how to unpack the user-provided boxes.
+useExistingBBoxes: False
+bboxType:
+
+# output verbosity
+verbose: 1
+
+# max number of frames to process from a video
+max_frames: 999999

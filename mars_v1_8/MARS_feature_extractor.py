@@ -48,18 +48,18 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
         im_w = srTop.header['width']
         im_h = srTop.header['height']
         fps = srTop.header['fps']
-    elif any(x not in ext for x in ['avi','mpg']):
+    elif any(x not in ext for x in ['avi','mpg','mp4']):
         vc = cv2.VideoCapture(top_video_fullpath)
         if vc.isOpened():
             rval = True
         else:
             rval = False
             print('video not readable')
-        fps = vc.get(cv2.cv.CV_CAP_PROP_FPS)
+        fps = vc.get(cv2.CAP_PROP_FPS)
         if np.isnan(fps): fps = 30.
-        num_frames = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        im_h = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-        im_w = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        num_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
+        im_h = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        im_w = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
     
     num_frames = min(num_frames, max_frames)
 
@@ -1081,7 +1081,7 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
                     if ext=='seq':
                         frame1 = srTop.getFrame(f - 1)[0]
                     else:
-                        vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f-1)
+                        vc.set(cv2.CAP_PROP_POS_FRAMES, f-1)
                         _, frame1 = vc.read()
                         frame1 = frame1.astype(np.float32)
                 else:
@@ -1090,7 +1090,7 @@ def extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig=
                 if ext == 'seq':
                     frame2 = srTop.getFrame(f)[0]
                 else:
-                    vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f)
+                    vc.set(cv2.CAP_PROP_POS_FRAMES, f)
                     _, frame2 = vc.read()
                     frame2 = frame2.astype(np.float32)
 
@@ -1396,11 +1396,11 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         else:
             rval = False
             print('video not readable')
-        fps = vc.get(cv2.cv.CV_CAP_PROP_FPS)
+        fps = vc.get(cv2.CAP_PROP_FPS)
         if np.isnan(fps): fps = 30.
-        num_frames = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        im_h = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-        im_w = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        num_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
+        im_h = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        im_w = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
     
     num_frames = min(num_frames, max_frames)
 
@@ -1418,11 +1418,11 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
         else:
             rval = False
             print('video not readable')
-        fpsf = vcf.get(cv2.cv.CV_CAP_PROP_FPS)
+        fpsf = vcf.get(cv2.CAP_PROP_FPS)
         if np.isnan(fpsf): fpsf = 30.
-        num_framesf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        im_hf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-        im_wf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        num_framesf = int(vcf.get(cv2.CAP_PROP_FRAME_COUNT))
+        im_hf = int(vcf.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        im_wf = int(vcf.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     num_framesf = min(num_framesf, max_frames)
 
@@ -2451,7 +2451,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                 if extf == 'seq':
                     fr = srFront.getFrame(fFr)[0]
                 else:
-                    vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, fFr)
+                    vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr)
                     _, fr = vcf.read()
                     fr = fr.astype(np.float32)
                 track['data_smooth'][0, f, ind5] = np.mean(fr)
@@ -2474,7 +2474,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                     if extf == 'seq':
                         frame1 = srFront.getFrame(fFr - 1)[0]
                     else:
-                        vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, fFr-1)
+                        vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr-1)
                         _, frame1 = vcf.read()
                         frame1 = frame1.astype(np.float32)
                 else:
@@ -2483,7 +2483,7 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                 if extf == 'seq':
                     frame2 = srFront.getFrame(fFr)[0]
                 else:
-                    vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, fFr)
+                    vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr)
                     _, frame2 = vcf.read()
                     frame2 = frame2.astype(np.float32)
                 df = np.abs(frame2 - frame1)
@@ -2529,14 +2529,14 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                     if ext=='seq':
                         frame1 = srTop.getFrame(f - 1)[0]
                     else:
-                        vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f-1)
+                        vc.set(cv2.CAP_PROP_POS_FRAMES, f-1)
                         _, frame1 = vc.read()
                         frame1 = frame1.astype(np.float32)
 
                     if extf == 'seq':
                         frame1f = srFront.getFrame(fFr - 1)[0]
                     else:
-                        vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, fFr-1)
+                        vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr-1)
                         _, frame1f = vcf.read()
                         frame1f = frame1f.astype(np.float32)
 
@@ -2550,14 +2550,14 @@ def extract_features_top_pcf(top_video_fullpath, front_video_fullpath,top_pose_f
                 if ext == 'seq':
                     frame2 = srTop.getFrame(f)[0]
                 else:
-                    vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f)
+                    vc.set(cv2.CAP_PROP_POS_FRAMES, f)
                     _, frame2 = vc.read()
                     frame2 = frame2.astype(np.float32)
 
                 if extf == 'seq':
                     frame2f = srFront.getFrame(fFr)[0]
                 else:
-                    vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, fFr)
+                    vcf.set(cv2.CAP_PROP_POS_FRAMES, fFr)
                     _, frame2f = vcf.read()
                     frame2f = frame2f.astype(np.float32)
                 frame2u = frame2
@@ -2887,11 +2887,11 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
         else:
             rval = False
             print('video not readable')
-        fps = vc.get(cv2.cv.CV_CAP_PROP_FPS)
+        fps = vc.get(cv2.CAP_PROP_FPS)
         if np.isnan(fps): fps = 30.
-        num_frames = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        im_h = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-        im_w = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        num_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
+        im_h = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        im_w = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
         vc.release()
     
     num_frames = min(num_frames, max_frames)
@@ -2910,11 +2910,11 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
         else:
             rval = False
             print('video not readable')
-        fpsf = vcf.get(cv2.cv.CV_CAP_PROP_FPS)
+        fpsf = vcf.get(cv2.CAP_PROP_FPS)
         if np.isnan(fpsf): fpsf = 30.
-        num_framesf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        im_hf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-        im_wf = int(vcf.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        num_framesf = int(vcf.get(cv2.CAP_PROP_FRAME_COUNT))
+        im_hf = int(vcf.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        im_wf = int(vcf.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     pix_per_cm = 37.79527606671214
     smooth_kernel = np.array([1, 2, 1]) / 4.
@@ -4033,7 +4033,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                 if extf == 'seq':
                     fr = srFront.getFrame(f)[0]
                 else:
-                    vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f)
+                    vcf.set(cv2.CAP_PROP_POS_FRAMES, f)
                     _, fr = vcf.read()
                     fr = fr.astype(np.float32)
                 track['data_smooth'][0, f, ind5] = np.mean(fr)
@@ -4053,7 +4053,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                     if extf == 'seq':
                         frame1 = srFront.getFrame(f - 1)[0]
                     else:
-                        vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f-1)
+                        vcf.set(cv2.CAP_PROP_POS_FRAMES, f-1)
                         _, frame1 = vcf.read()
                         frame1 = frame1.astype(np.float32)
                 else:
@@ -4062,7 +4062,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                 if extf == 'seq':
                     frame2 = srFront.getFrame(f)[0]
                 else:
-                    vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f)
+                    vcf.set(cv2.CAP_PROP_POS_FRAMES, f)
                     _, frame2 = vcf.read()
                     frame2 = frame2.astype(np.float32)
                 df = np.abs(frame2 - frame1)
@@ -4104,7 +4104,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                     if extf == 'seq':
                         frame1f = srFront.getFrame(f - 1)[0]
                     else:
-                        vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f - 1)
+                        vcf.set(cv2.CAP_PROP_POS_FRAMES, f - 1)
                         _, frame1f = vcf.read()
                         frame1f = frame1f.astype(np.float32)
                 else:
@@ -4113,7 +4113,7 @@ def extract_features_front(top_video_fullpath, front_video_fullpath,front_pose_f
                 if extf == 'seq':
                     frame2f = srFront.getFrame(f)[0]
                 else:
-                    vcf.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f)
+                    vcf.set(cv2.CAP_PROP_POS_FRAMES, f)
                     _, frame2f = vcf.read()
                     frame2f = frame2f.astype(np.float32)
 

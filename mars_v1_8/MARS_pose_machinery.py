@@ -7,8 +7,9 @@ import multiprocessing as mp
 import cv2
 import progressbar
 import platform
+from pathlib import Path
 
-import os
+import os, sys
 import pickle
 
 def get_macOS_version_info():
@@ -599,12 +600,13 @@ def pre_hm(q_in_det, q_in_image, q_out_img, q_out_bbox, IM_W, IM_H):
 def run_hm_setup(view, opts):
     # Figure out which view we're using.
     if view == 'front':
-        QUANT_POSE = opts['front_pose_model']
+        QUANT_POSE = str(Path(opts['front_pose_model']))
     else:
-        QUANT_POSE = opts['top_pose_model']
+        QUANT_POSE = str(Path(opts['top_pose_model']))
 
     # Import the pose model.
     return ImportGraphPose(QUANT_POSE)
+
 
 def run_hm_inner(prepped_images, pose_model):
     # Run the pose estimation network.
