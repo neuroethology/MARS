@@ -145,20 +145,15 @@ class ImportGraphPose():
 
 
 def get_median_frame(cap):
-    # fix this for seq files!!!------------------------------
-
     # Randomly select 25 frames
-    frameIds = cap.get(cv2.CAP_PROP_FRAME_COUNT) * np.random.uniform(size=25)
+    frameIds = np.round(cap.NUM_FRAMES * np.random.uniform(size=25))
 
     # Store selected frames in an array
     frames = []
     for fid in frameIds:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, fid)
-        ret, frame = cap.read()
+        frame = cap.getFrame(fid)
         frames.append(frame)
-
-    # Reset frame number to 0
-    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    cap.seek(0) # reset to first frame
 
     # Calculate the median along the time axis
     medianFrame = np.median(frames, axis=0).astype(dtype=np.uint8)
@@ -168,22 +163,27 @@ def get_median_frame(cap):
 def pre_process_image(image, medianFrame, IM_TOP_H, IM_TOP_W, DET_IM_SIZE):
     """ Takes a u8int image and prepares it for detection. """
 
-    norm_image = cv2.divide(image.astype(np.float32), medianFrame.astype(np.float32)) #what does this do to the scale though?
-    norm_image = np.minimum(norm_image, 8.0)
+    if medianFrame: # this is empty if bgSubtract is false
+        norm_image = cv2.divide(image.astype(np.float32), medianFrame.astype(np.float32))
+        norm_image = np.minimum(norm_image, 8.0)
+    else:
+        norm_image = image
 
     # Resize the image to the size the detector takes.
     prep_image = cv2.resize(norm_image, (DET_IM_SIZE, DET_IM_SIZE), interpolation=cv2.INTER_NEAREST)
-    # prep_image = resize(image, [DET_IM_SIZE, DET_IM_SIZE, image.shape[2]])
 
     # Convert image to float and shift the image values from [0, 256] to [-1, 1].
-    prep_image = np.divide(np.add(prep_image, -4.).astype(np.float32), 4.)
+    if medianFrame:
+        prep_image = np.divide(np.add(prep_image, -4.).astype(np.float32), 4.)
+    else:
+        prep_image = np.divide(cv2.add(prep_image.astype(int), -128).astype(np.float32), 128.)
 
     # Convert to RGB if necessary.
     if len(prep_image.shape) < 3:
         prep_image = cv2.cvtColor(prep_image, cv2.COLOR_GRAY2RGB)
 
     # Flatten the array.
-    # prep_image = prep_image.ravel()
+    prep_image = prep_image.ravel()
     # Add an additional dimension to stack images on.
     return np.expand_dims(prep_image, 0)
 
