@@ -42,7 +42,7 @@ First, **install CUDA** by following the [NVIDIA CUDA installation guide](https:
   4) **Build** the MARS conda environment by entering the following:
       ```
       cd ~/MARS
-      conda create --name mars --file requirements.txt
+      conda env create -f MARS_environment_linux.yml
       ```
 Once the build has finished, you can activate the MARS environment by calling `conda activate mars` (or `system activate mars`).
 
@@ -52,4 +52,4 @@ Before you can run MARS, you need to download the trained neural networks and cl
 
 Models can be downloaded from [https://data.caltech.edu/records/1655](https://data.caltech.edu/records/1655). After downloading, unzip the `models` folder into the `MARS/mars_v1_8` directory. The contents of `MARS/mars_v1_8/models` should now be three directories called `classifier`, `detection`, and `pose`.
 
-Now you're ready to classify some behaviors!
+Now you're ready to detect some behaviors!
