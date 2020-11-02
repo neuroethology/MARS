@@ -41,8 +41,13 @@ class ImportGraphDetection():
                 self.use_ml_model = True
                 print(f"ImportGraphDetection: Using mlmodel from {self.ml_model_path}")
             else:
-                # Generate a .mlmodel using coremltools.models.nn.convert
-                print(f"ImportGraphDetection: Couldn't find mlmodel at {self.ml_model_path}; using {quant_model}")
+                # Generate a .mlmodel using coremltools.converters.convert
+                print(f"ImportGraphDetection: Building and saving {self.ml_model_path} from {quant_model}")
+                mlmodel = cmt.converters.convert(quant_model)
+                # We can't quantize down to fp16 to reduce model size.
+                self.ml_model = cmt.models.neural_network.quantization_utils.quantize_weights(mlmodel, 16)
+                self.ml_model.save(self.ml_model_path)
+                self.use_ml_model = True
         
         else:   # use the TensorFlow model
             # Read the graph protocol buffer (.pb) file and parse it to retrieve the unserialized graph definition.
@@ -76,11 +81,9 @@ class ImportGraphDetection():
     def run(self, input_image):
         ''' This method is what actually runs an image through the Multibox network.'''
         if self.use_ml_model:
-            if True and platform.system() == 'Darwin':
-                import coremltools
             if not self.ml_model:
                 # delay loading the model until we're in the correct thread
-                self.ml_model = coremltools.models.MLModel(self.ml_model_path)
+                self.ml_model = cmt.models.MLModel(self.ml_model_path)
             predictions = self.ml_model.predict({'images': input_image})
             return predictions['predicted_locations'], predictions['Multibox/Sigmoid']
         return self.sess.run([self.output_tensor_loc, self.output_tensor_conf], {self.input_tensor: input_image})
@@ -102,7 +105,11 @@ class ImportGraphPose():
                 print(f"ImportGraphPose: Using mlmodel from {self.ml_model_path}")
             else:
                 # Generate a .mlmodel using coremltools.models.nn.convert
-                print(f"ImportGraphPose: Couldn't find mlmodel at {self.ml_model_path}; using {quant_model}")
+                # We can't quantize down to fp16 to reduce model size.
+                print(f"ImportGraphPose: Building and saving {self.ml_model_path} from {quant_model}")
+                self.ml_model = cmt.converters.convert(quant_model)
+                self.ml_model.save(self.ml_model_path)
+                self.use_ml_model = True
 
         else:   # use TensorFlow model
             # Read the graph protbuf (.pb) file and parse it to retrieve the unserialized graph definition.
@@ -133,11 +140,9 @@ class ImportGraphPose():
     def run(self, cropped_images):
         """ This method is what actually runs an image through the stacked hourglass network."""
         if self.use_ml_model:
-            if True and platform.system() == 'Darwin':
-                import coremltools
             if not self.ml_model:
                 # delay loading the model until we're in the correct thread
-                self.ml_model = coremltools.models.MLModel(self.ml_model_path)
+                self.ml_model = cmt.models.MLModel(self.ml_model_path)
             predictions = self.ml_model.predict({'images': cropped_images})
             # wrap return value in list to match TF behavior
             return [predictions['output_heatmaps']]
