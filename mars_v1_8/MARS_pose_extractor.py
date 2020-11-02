@@ -226,7 +226,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                             process_time_1a = time.perf_counter()
                             process_time[1] += process_time_1a - process_time_start_0
 
-                        in_q[ix], pose_image_q[ix] = pre_det_inner([img, bboxes[f]], IM_H, IM_W)
+                        in_q[ix], pose_image_q[ix] = pre_det_inner([img, bboxes[f]], medianFrame, IM_H, IM_W)
 
                         if time_steps:
                             process_time_1 = time.perf_counter()
