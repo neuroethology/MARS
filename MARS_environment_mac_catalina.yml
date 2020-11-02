@@ -138,6 +138,6 @@ dependencies:
     - colour-science==0.3.15
     - hmmlearn==0.2.4
     - opencv-python==4.4.0.44
-    - coremltools==4.0b4
+    - coremltools==4.0
 prefix: /home/mars/miniconda3/envs/mars
 
