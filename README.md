@@ -40,7 +40,7 @@ The following instructions cover GPU setup and creation of the MARS conda enviro
 
 
 #### Docker support
-Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Also note that because Docker for Windows does not support GPU access, the MARS Docker container is currently Linux-only. Step-by-step instructions to set up the MARS Docker can be found [here](docs/Docker_instructions.md).
+Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Also note that because Docker for Windows does not support GPU access, the MARS Docker container is currently Linux-only. [Instructions to set up the MARS Docker can be found here.](docs/Docker_instructions.md)
 
 ## Running MARS
  MARS can be run either through a graphical interface or from Juypter/Python terminal. Before running MARS, make sure you do the following:
