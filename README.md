@@ -17,10 +17,10 @@ MARS is an end-to-end computational pipeline for **tracking**, **pose estimation
 </div>
 
 ## Requirements
-#### System requirements
+### System requirements
 MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU.
 
-#### Data requirements
+### Data requirements
 MARS v1.8 works on top-view videos featuring pairs of interacting mice, with a black resident mouse and a white intruder mouse. MARS can be run on unoperated mice, or on videos in which one mouse has been implanted with a cable-attached device such as a microendoscope or fiberphotometry/optogenetic fiber.
 
 ![Example video frames from the MARS training set](docs/sample_arenas.png)
@@ -39,7 +39,7 @@ The following instructions cover GPU setup and creation of the MARS conda enviro
 |Mac | [link](docs/) - TODO |
 
 
-#### Docker support
+### Docker support
 Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Also note that because Docker for Windows does not support GPU access, the MARS Docker container is currently Linux-only. [Instructions to set up the MARS Docker can be found here.](docs/Docker_instructions.md)
 
 ## Running MARS
@@ -47,7 +47,7 @@ Installing MARS via Docker instead of conda will give MARS more protection from 
  - Add the `mars_v1_8` directory to your Python search path (or, run Python from within this directory.)
  - Activate the MARS conda environment by calling `conda activate mars` or `source activate mars`.
 
-#### Running from the Python terminal
+### Running from the Python terminal
 To run MARS with default settings, simply call the following from within Python:
 ```
 import MARS
@@ -63,7 +63,7 @@ MARS.run_MARS(folder, user_opts=opts)
 ```
 Please refer to `config.yml` to see the full list of available options.
 
-#### Running with the MARS GUI
+### Running with the MARS GUI
 To run MARS using the GUI, simply call `MARS.py` from the terminal:
 ```
 python MARS.py
