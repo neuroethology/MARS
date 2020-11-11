@@ -34,6 +34,9 @@ def get_names(video_name):
     elif 'mpg' in video_name:
         top_ending='_Top.mpg'
         front_ending=''
+    elif 'mp4' in video_name:
+        top_ending='_Top.mp4'
+        front_ending=''
     elif any(x in video_name for x in ['_s','_t']):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
@@ -223,7 +226,7 @@ def dump_bento_across_dir(root_path):
 
     for fname in nonaudio_filenames:
         try:
-            cond1 = all(x not in fname for x in ['.seq','.avi','.mpg'])
+            cond1 = all(x not in fname for x in ['.seq','.avi','.mpg','.mp4'])
             cond2 = 'skipped' in path
 
             if (cond1) | cond2:
