@@ -31,7 +31,7 @@ def walk_current_folder(root_path, mars_opts):
         for numv, fname in enumerate(filenames):
 
             # start by looping over all movie files that have "Top" in their name
-            cond1 = all(x not in fname for x in ['.seq', '.avi', '.mpg'])
+            cond1 = all(x not in fname for x in ['.seq', '.avi', '.mpg', '.mp4'])
             cond2 = 'skipped' in path
             cond3 = 'Top' not in fname and '_t.seq' not in fname
             if cond1 | cond2 | cond3:
