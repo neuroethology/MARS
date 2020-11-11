@@ -1,10 +1,22 @@
 # The **M**ouse **A**ction **R**ecognition **S**ystem (**MARS**)
 
 MARS is an end-to-end computational pipeline for **tracking**, **pose estimation**, and **behavior classification** in interacting laboratory mice. MARS version 1.8 can detect attack, mounting, and close investigation behaviors in a standard resident-intruder assay.
+
+## Quick Navigation
+1) [Requirements](#requirements)
+  1.1. [System requirements](#systemrequirements)
+  1.2. [Data requirements](#datarequirements)
+2) [Installation](#installation)
+  2.1. [Docker support](#dockersupport)
+3) [Running MARS](#runningmars)
+  3.1. [Running from the Python terminal](#runningfromthepythonterminal)
+  3.2. [Running from the MARS GUI](#runningfromthemarsgui)
+
 <div align=center>
 <img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_demo.gif?raw=true'>
 </div>
 
+## Requirements
 #### System requirements
 MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU; MARS runs fastest on NVIDIA GPUs with at least 10Gb memory.
 
@@ -35,7 +47,7 @@ Installing MARS via Docker instead of conda will give MARS more protection from 
  - Add the `mars_v1_8` directory to your Python search path (or, run Python from within this directory.)
  - Activate the MARS conda environment by calling `conda activate mars` or `source activate mars`.
 
-#### Running from Jupyter/Python
+#### Running from the Python terminal
 To run MARS with default settings, simply call the following from within Python:
 ```
 import MARS
