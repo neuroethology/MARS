@@ -3,14 +3,14 @@
 MARS is an end-to-end computational pipeline for **tracking**, **pose estimation**, and **behavior classification** in interacting laboratory mice. MARS version 1.8 can detect attack, mounting, and close investigation behaviors in a standard resident-intruder assay.
 
 ## Quick Navigation
-1) [Requirements](#requirements)
-  1.1. [System requirements](#systemrequirements)
-  1.2. [Data requirements](#datarequirements)
-2) [Installation](#installation)
-  2.1. [Docker support](#dockersupport)
-3) [Running MARS](#runningmars)
-  3.1. [Running from the Python terminal](#runningfromthepythonterminal)
-  3.2. [Running from the MARS GUI](#runningfromthemarsgui)
+* [Requirements](#requirements)
+    * [System requirements](#system-requirements)
+    * [Data requirements](#data-requirements)
+* [Installation](#installation)
+    * [Docker support](#docker-support)
+* [Running MARS](#running-mars)
+    * [Running from the Python terminal](#running-from-the-python-terminal)
+    * [Running from the MARS GUI](#running-from-the-mars-gui)
 
 <div align=center>
 <img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_demo.gif?raw=true'>
