@@ -36,7 +36,7 @@ The following instructions cover GPU setup and creation of the MARS conda enviro
 |---|:---:|
 |Linux + NVIDIA | [link](docs/install_linux_nvidia.md) |
 |Windows + NVIDIA | [link](docs/install_windows_nvidia.md) |
-|Mac | [link](docs/) - TODO |
+|Mac | (coming soon) |
 
 
 ### Docker support
