@@ -7,19 +7,31 @@ import multiprocessing as mp
 import cv2
 import progressbar
 import platform
+from pathlib import Path
 
-if False and platform.system() == 'Darwin':
-    import coremltools as cmt
-import os
+import os, sys
 import pickle
+
+def get_macOS_version_info():
+    if platform.system() != "Darwin":
+        return (0, 0, 0)
+    return tuple(map(int, platform.mac_ver()[0].split('.')))
+
+major, minor, _ = get_macOS_version_info()
+if major == 10 and minor >= 15:
+    import coremltools as cmt
+    use_coreml = True
+else:
+    use_coreml = False
 
 class ImportGraphDetection():
     """ Convenience class for setting up the detector and using it."""
     def __init__(self, quant_model):
         self.use_ml_model = False
 
-        if False and platform.system() == 'Darwin':
-        # First, try to read an existing mlmodel
+        if use_coreml:
+            # we're running on a Mac with at least MacOS Catalina, so use MLModel
+            # First, try to read an existing mlmodel
             quant_model_stem, _ = os.path.splitext(quant_model)
             self.ml_model_path = quant_model_stem + '.mlmodel'
             if os.path.exists(self.ml_model_path):
@@ -29,8 +41,13 @@ class ImportGraphDetection():
                 self.use_ml_model = True
                 print(f"ImportGraphDetection: Using mlmodel from {self.ml_model_path}")
             else:
-                # Generate a .mlmodel using coremltools.models.nn.convert
-                print(f"ImportGraphDetection: Couldn't find mlmodel at {self.ml_model_path}; using {quant_model}")
+                # Generate a .mlmodel using coremltools.converters.convert
+                print(f"ImportGraphDetection: Building and saving {self.ml_model_path} from {quant_model}")
+                mlmodel = cmt.converters.convert(quant_model)
+                # We can't quantize down to fp16 to reduce model size.
+                self.ml_model = cmt.models.neural_network.quantization_utils.quantize_weights(mlmodel, 16)
+                self.ml_model.save(self.ml_model_path)
+                self.use_ml_model = True
         
         else:   # use the TensorFlow model
             # Read the graph protocol buffer (.pb) file and parse it to retrieve the unserialized graph definition.
@@ -78,7 +95,7 @@ class ImportGraphPose():
         quant_model_stem, _ = os.path.splitext(quant_model)
         self.use_ml_model = False
 
-        if False and platform.system() == 'Darwin': # use Mac-native GPU if possible
+        if use_coreml: # on MacOS Catalina; use Mac-native GPU if possible
             self.ml_model_path = quant_model_stem + '.mlmodel'
             if os.path.exists(self.ml_model_path):
                 # Use an existing .mlmodel file
@@ -88,7 +105,11 @@ class ImportGraphPose():
                 print(f"ImportGraphPose: Using mlmodel from {self.ml_model_path}")
             else:
                 # Generate a .mlmodel using coremltools.models.nn.convert
-                print(f"ImportGraphPose: Couldn't find mlmodel at {self.ml_model_path}; using {quant_model}")
+                # We can't quantize down to fp16 to reduce model size.
+                print(f"ImportGraphPose: Building and saving {self.ml_model_path} from {quant_model}")
+                self.ml_model = cmt.converters.convert(quant_model)
+                self.ml_model.save(self.ml_model_path)
+                self.use_ml_model = True
 
         else:   # use TensorFlow model
             # Read the graph protbuf (.pb) file and parse it to retrieve the unserialized graph definition.
@@ -113,7 +134,7 @@ class ImportGraphPose():
             # access to input and output nodes
             self.input_op = self.graph.get_operation_by_name('images')
             self.input_tensor = self.input_op.outputs[0]
-            self.output_op_heatmaps = self.graph.get_operation_by_name('HourGlass/Conv_30/BiasAdd')
+            self.output_op_heatmaps = self.graph.get_operation_by_name('output_heatmaps')
             self.output_tensor_heatmaps = self.output_op_heatmaps.outputs[0]
 
     def run(self, cropped_images):
@@ -124,26 +145,50 @@ class ImportGraphPose():
                 self.ml_model = cmt.models.MLModel(self.ml_model_path)
             predictions = self.ml_model.predict({'images': cropped_images})
             # wrap return value in list to match TF behavior
-            return [predictions['HourGlass/Conv_30/BiasAdd']]
-            # return [predictions['HourGlass/Conv_14/BiasAdd']]
+            return [predictions['output_heatmaps']]
         return self.sess.run([self.output_tensor_heatmaps], {self.input_tensor: cropped_images})
 
 
-def pre_process_image(image, IM_TOP_H, IM_TOP_W, DET_IM_SIZE):
+def get_median_frame(cap):
+    # Randomly select 25 frames
+    frameIds = np.round(cap.NUM_FRAMES * np.random.uniform(size=25))
+
+    # Store selected frames in an array
+    frames = []
+    for fid in frameIds:
+        frame = cap.getFrame(fid)
+        frames.append(frame)
+    cap.seek(0) # reset to first frame
+
+    # Calculate the median along the time axis
+    medianFrame = np.median(frames, axis=0).astype(dtype=np.uint8)
+    return medianFrame
+
+
+def pre_process_image(image, medianFrame, IM_TOP_H, IM_TOP_W, DET_IM_SIZE):
     """ Takes a u8int image and prepares it for detection. """
+
+    if medianFrame: # this is empty if bgSubtract is false
+        norm_image = cv2.divide(image.astype(np.float32), medianFrame.astype(np.float32))
+        norm_image = np.minimum(norm_image, 8.0)
+    else:
+        norm_image = image
+
     # Resize the image to the size the detector takes.
-    prep_image = cv2.resize(image, (DET_IM_SIZE, DET_IM_SIZE), interpolation=cv2.INTER_NEAREST)
-    # prep_image = resize(image, [DET_IM_SIZE, DET_IM_SIZE, image.shape[2]])
+    prep_image = cv2.resize(norm_image, (DET_IM_SIZE, DET_IM_SIZE), interpolation=cv2.INTER_NEAREST)
 
     # Convert image to float and shift the image values from [0, 256] to [-1, 1].
-    prep_image = cv2.divide(cv2.add(prep_image.astype(int), -128).astype(np.float32), 128.)
+    if medianFrame:
+        prep_image = np.divide(np.add(prep_image, -4.).astype(np.float32), 4.)
+    else:
+        prep_image = np.divide(cv2.add(prep_image.astype(int), -128).astype(np.float32), 128.)
 
     # Convert to RGB if necessary.
     if len(prep_image.shape) < 3:
         prep_image = cv2.cvtColor(prep_image, cv2.COLOR_GRAY2RGB)
 
     # Flatten the array.
-    prep_image = prep_image.ravel()    
+    prep_image = prep_image.ravel()
     # Add an additional dimension to stack images on.
     return np.expand_dims(prep_image, 0)
 
@@ -347,7 +392,7 @@ def get_poison_pill():
     """ Just in case we need to access the poison pill from outside this module."""
     return POISON_PILL
 
-def pre_det_inner(raw_data, IM_TOP_H, IM_TOP_W):
+def pre_det_inner(raw_data, median_frame, IM_TOP_H, IM_TOP_W):
     """ The per-frame work of preparing the image for detection """
 
     # TODO: Make these parameters inputs to the function.
@@ -357,12 +402,12 @@ def pre_det_inner(raw_data, IM_TOP_H, IM_TOP_W):
     top_image, bbox = raw_data
 
     # Preprocess the image.
-    top_input_image = pre_process_image(top_image, IM_TOP_H, IM_TOP_W, DET_IM_SIZE)
+    top_input_image = pre_process_image(top_image, median_frame, IM_TOP_H, IM_TOP_W, DET_IM_SIZE)
 
     return [top_input_image, bbox], top_image
     
 
-def pre_det(q_in, q_out_predet, q_out_raw, IM_TOP_H, IM_TOP_W):
+def pre_det(q_in, q_out_predet, q_out_raw, median_frame, IM_TOP_H, IM_TOP_W):
     """ Worker function that preprocesses raw images for input to the detection network.
     q_in: from frame feeding loop in the main function.
 
@@ -379,7 +424,7 @@ def pre_det(q_in, q_out_predet, q_out_raw, IM_TOP_H, IM_TOP_W):
                 q_out_raw.put(POISON_PILL)
                 return
 
-            predet_out_det, predet_out_pose = pre_det_inner(raw_data, IM_TOP_H, IM_TOP_W)
+            predet_out_det, predet_out_pose = pre_det_inner(raw_data, median_frame, IM_TOP_H, IM_TOP_W)
 
             # Send the altered output image to the detection network, and the raw image to the pre-pose estimation fxn.
             q_out_predet.put(predet_out_det)
@@ -560,12 +605,13 @@ def pre_hm(q_in_det, q_in_image, q_out_img, q_out_bbox, IM_W, IM_H):
 def run_hm_setup(view, opts):
     # Figure out which view we're using.
     if view == 'front':
-        QUANT_POSE = opts['front_pose_model']
+        QUANT_POSE = str(Path(opts['front_pose_model']))
     else:
-        QUANT_POSE = opts['top_pose_model']
+        QUANT_POSE = str(Path(opts['top_pose_model']))
 
     # Import the pose model.
     return ImportGraphPose(QUANT_POSE)
+
 
 def run_hm_inner(prepped_images, pose_model):
     # Run the pose estimation network.
@@ -666,3 +712,82 @@ def post_hm(q_in_hm, q_in_bbox, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, POSE_BASEN
         print("\nerror occurred during pose post-processing (function MARS_pose_machinery.post_hm)")
         print(e)
         raise(e)
+
+def run_gpu(q_in_det, q_out_det, q_in_hm, q_out_hm, view, opts, queue_size):
+    do_det = True
+    do_hm = True
+    BATCH_SIZE = min(queue_size, 16)
+    print("\n\nIn run_gpu\n\n")
+    try:
+        # Decide on which view to use.
+        det_black, det_white = run_det_setup(view, opts)
+        pose_model = run_hm_setup(view, opts)
+    except Exception as e:
+        print("\nError occurred during loading of models")
+        print(e)
+        q_out_det.put(POISON_PILL)
+        q_out_hm.put(POISON_PILL)
+        raise e
+
+    while do_det or do_hm:
+        if do_det:
+            for item in range(BATCH_SIZE):
+                try:
+                    # Get the input image.
+                    if q_in_det.empty():
+                        print("q_in_det is empty")
+                        break
+                    print('trying to get from q_in_det')
+                    input_data = q_in_det.get(False)
+                    print('got det')
+                except Exception as e:
+                    print(f'unexpected exception trying to get from q_in_det: {e}')
+                    raise e
+
+                # Check if we got the poison pill --if so, shut down.
+                if input_data == POISON_PILL:
+                    q_out.put(POISON_PILL)
+                    do_det = False
+                    break
+
+                try:
+                    det_b = run_det_inner(input_data, det_black, opts)
+                    det_w = run_det_inner(input_data, det_white, opts)
+                    # Send the output to the post-detection processing worker.
+                    q_out_det.put([det_b, det_w])
+                except Exception as e:
+                    print("\nerror occurred during detection (function MARS_pose_machinery.run_det)")
+                    print(e)
+                    q_out.put(POISON_PILL)
+                    raise e
+
+        if do_hm:
+            for item in range(BATCH_SIZE):
+                try:
+                    # Collect the prepared images for inference.
+                    if q_in_hm.empty(): # only a hint
+                        print("q_in_hm is empty")
+                        break
+                    print('trying to get from q_in_hm')
+                    prepped_images = q_in_hm.get()
+                    print('got hm')
+                except Exception as e:
+                    print(f"unexpected exception trying to get from q_in_hm: {e}")
+                    raise e
+
+                # Check if we got the poison pill --if so, shut down.
+                if prepped_images == POISON_PILL:
+                    q_out_hm.put(POISON_PILL)
+                    do_hm = False
+                    break
+
+                try:
+                    predicted_heatmaps = run_hm_inner(prepped_images, pose_model)
+
+                    # Send the heatmaps out for post-processing.
+                    q_out_hm.put(predicted_heatmaps)
+                except Exception as e:
+                    print("\nerror occurred during pose estimation (function MARS_pose_machinery.run_hm)")
+                    print(e)
+                    raise(e)
+    return

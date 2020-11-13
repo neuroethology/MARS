@@ -1,29 +1,77 @@
 # The **M**ouse **A**ction **R**ecognition **S**ystem (**MARS**)
 
-MARS is an end-to-end computational pipeline for **tracking**, **pose estimation**, and **behavior classification** in interacting laboratory mice.
+MARS is an end-to-end computational pipeline for **tracking**, **pose estimation**, and **behavior classification** in interacting laboratory mice. MARS version 1.8 can detect attack, mounting, and close investigation behaviors in a standard resident-intruder assay.
 
-MARS can be run either through a graphical interface or from the command line.
+### Quick Navigation
+* [Requirements](#requirements)
+    * [System requirements](#system-requirements)
+    * [Data requirements](#data-requirements)
+* [Installation](#installation)
+    * [Docker support](#docker-support)
+* [Running MARS](#running-mars)
+    * [Running from the Python terminal](#running-from-the-python-terminal)
+    * [Running from the MARS GUI](#running-from-the-mars-gui)
 
-### Installation
-Installation of MARS can be managed via either a conda environment or a Docker container. To run MARS you will need a Linux computer with an Nvidia GPU.
+<div align=center>
+<img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_demo.gif?raw=true'>
+</div>
 
-#### Step-by-step instructions for installing the MARS conda environment
-1) If not already installed, install [miniconda](https://docs.conda.io/en/latest/miniconda.html) by opening a terminal and entering:
+## Requirements
+### System requirements
+MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS on a computer with a GPU.
 
-     ```
-     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-     sh ./Miniconda3-latest-Linux-x86_64.sh
-     ```
-    then following the install instructions. Check your install by opening a new terminal and typing `which python`. This should return something like `~/miniconda3/bin/python`.
+### Data requirements
+MARS v1.8 works on top-view videos featuring pairs of interacting mice, with a black resident mouse and a white intruder mouse. MARS can be run on unoperated mice, or on videos in which one mouse has been implanted with a cable-attached device such as a microendoscope or fiberphotometry/optogenetic fiber.
 
-2) Clone or download the contents of this GitHub repository.
+![Example video frames from the MARS training set](docs/sample_arenas.png)
 
-3) Build the MARS conda environment by navigating to your local copy of the MARS GitHub repository and calling
-    ```
-    conda env create -f MARS_environment_py2.yml
-    ```
-    Once the build has finished, you can activate the MARS environment by calling `conda activate mars` (or `system activate mars`).
+MARS performs best on videos taken in a standard home cage, at roughly 30Hz, and either in color or grayscale. We recommend the recording setup described in [Hong et al 2015](https://www.pnas.org/content/112/38/E5351.short), minus the depth camera (front-view camera is optional, and is not currently used in pose estimation.)
+
+## Installation
+The easiest way to run MARS is with a conda environment, which will handle the installation of all necessary Python modules. In cases where this is not possible, we also provide a Docker environment that can be used on Linux machines (see below).
+
+The following instructions cover GPU setup and creation of the MARS conda environment:
+
+|Operating System + GPU | Install Instructions |
+|---|:---:|
+|Linux + NVIDIA | [link](docs/install_linux_nvidia.md) |
+|Windows + NVIDIA | [link](docs/install_windows_nvidia.md) |
+|Mac | (coming soon) |
 
 
-#### Step-by-step instructions for installing the MARS Docker
-Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Step-by-step instructions can be found [here](https://github.com/neuroethology/MARS/blob/master/README_Docker.md).
+### Docker support
+Installing MARS via Docker instead of conda will give MARS more protection from changes to your host machine, however it is a more involved process. Also note that because Docker for Windows does not support GPU access, the MARS Docker container is currently Linux-only. [Instructions to set up the MARS Docker can be found here.](docs/Docker_instructions.md)
+
+## Running MARS
+ MARS can be run either through a graphical interface or from Juypter/Python terminal. Before running MARS, make sure you do the following:
+ - Add the `mars_v1_8` directory to your Python search path (or, run Python from within this directory.)
+ - Activate the MARS conda environment by calling `conda activate mars` or `source activate mars`.
+
+### Running from the Python terminal
+To run MARS with default settings, simply call the following from within Python:
+```
+import MARS
+folder = ['\path\to\your\videos']
+MARS.run_MARS(folder)
+```
+> **Important note**: for MARS to find your movie, **please give it a file name ending in "_Top"** (indicating that it was filmed from a top-view camera.) MARS currently runs on videos in `*.seq`, `*.avi`, `*.mp4`, or `*.mpg` format.
+
+MARS default settings can be found within `config.yml`, along with descriptions for what each setting does. You can change settings either by modifying this file, or by passing a second "options" parameter in your call to `run_MARS`. For example, here we turn off behavior classification, and tell MARS to overwrite any existing pose/feature files:
+```
+opts = {'doActions': False, 'doOverwrite': True}
+MARS.run_MARS(folder, user_opts=opts)
+```
+Please refer to `config.yml` to see the full list of available options.
+
+### Running with the MARS GUI
+To run MARS using the GUI, simply call `MARS.py` from the terminal:
+```
+python MARS.py
+```
+First, click <kbd>Browse</kbd> and navigate to the directory containing your videos. If MARS finds any videos in that directory, it will display additional buttons to set run options:
+<div align=center>
+<img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_gui.png?raw=true'>
+</div>
+Click <kbd>Enqueue</kbd> to add your selected folder to MARS's work queue, then select the camera view you use (typically "Top") and the tasks you want to run (typically "Pose", "Features", and "Classify Actions".) Check "Produce Video" if you'd like MARS to generate a video of the tracked poses, and check "Overwrite" to overwrite previously generated MARS output. Finally, click the green <kbd>Run MARS</kbd> button to start running!
+
+You can track MARS's progress using the progress bars in the gui, or refer to your terminal for more detailed progress updates.

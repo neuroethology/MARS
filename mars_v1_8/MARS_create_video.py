@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import progressbar
 sys.path.append('./')
-from seqIo import seqIo_reader,parse_ann_dual
+from util.seqIo import seqIo_reader,parse_ann_dual
 import MARS_output_format as mof
 import multiprocessing as mp
 import cv2
@@ -118,10 +118,10 @@ def create_mp4_prediction(top_video_fullpath,
             else:
                 rval = False
                 print('video not readable')
-            fps = vc.get(cv2.cv.CV_CAP_PROP_FPS)
+            fps = vc.get(cv2.CAP_PROP_FPS)
             if np.isnan(fps): fps = 30.
-            IM_TOP_W = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-            IM_TOP_H = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+            IM_TOP_W = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            IM_TOP_H = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
         num_frames = len(keypoints)
 
         actions_pred = parse_ann_dual(pred_file_fullpath)
@@ -314,7 +314,7 @@ def create_mp4_prediction(top_video_fullpath,
             if ext == 'seq':
                 frame = srTop.getFrame(f)[0]
             else:
-                vc.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, f)
+                vc.set(cv2.CAP_PROP_POS_FRAMES, f)
                 _, frame = vc.read()
                 frame = frame.astype(np.float32)
             im.set_data(frame / 256.)

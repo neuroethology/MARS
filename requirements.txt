@@ -1,3 +1,4 @@
+tensorflow-gpu==1.15
 numpy==1.16.4
 scipy
 matplotlib
@@ -13,8 +14,6 @@ dill
 colour_demosaicing
 imbalanced-learn==0.3.3
 colour-science
-protobuf==3.5.1
 xlwt
 joblib==0.11
-https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.1.0-cp27-none-linux_x86_64.whl
-multiprocessing
+hmmlearn==0.2.2

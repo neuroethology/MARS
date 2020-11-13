@@ -1,0 +1,46 @@
+# these are the default settings that MARS will use if you don't override them
+
+# relative paths to the models used for detection and pose estimation.
+black_detector_front: models/detection/MARS_front_detection_black.pb
+white_detector_front: models/detection/MARS_front_detection_white.pb
+black_detector_top: models/detection/MARS_top_detection_black.pb
+white_detector_top: models/detection/MARS_top_detection_white.pb
+front_pose_model: models/pose/MARS_front_pose.pb
+top_pose_model: models/pose/MARS_top_pose.pb
+
+# which stages of analysis to run- pose estimation, feature extraction, and behavior classification
+# feature extraction is a required step if you wish to do behavior classification, and
+# pose estimation is a required step if you wish to do feature extraction.
+doPose: True
+doFeats: True
+doActions: True
+
+# enable to have MARS save a video of the resulting pose estimation
+doVideo: False
+
+# overwrite any existing pose/feature/annotation files for a given video
+doOverwrite: False
+
+# type of pose/behavior features to extract:
+# doTop = estimate pose and extract features from top-camera only
+# doFront = pose+features from both top and front cameras (requires a two-camera setup, in which front-view video is saved with filename ending in "_Front")
+# doToppcf = pose from top video, but include pixel-based features from front video (requires a two-camera setup, in which front-view video is saved with filename ending in "_Front")
+doTop: True
+doFront: False
+doToppcf: False
+
+# enable background-subtraction prior to mouse detection/pose estimation. This is an experimental feature, it might
+# help MARS to do a better job in arenas it hasn't seen before?
+bgSubtract: False
+
+# import bounding boxes produced by a different system, and use these instead of MARS's detection step.
+# If set to true, bboxType tells MARS how to unpack the user-provided boxes.
+# this feature is still in development.
+useExistingBBoxes: False
+bboxType:
+
+# output verbosity
+verbose: 1
+
+# max number of frames to process from a video
+max_frames: 9999999
