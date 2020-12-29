@@ -12,10 +12,9 @@ def get_names(video_name):
         mouse_name = video_name[:-6]
     elif ('_t.seq' in video_name):
         mouse_name = video_name[:-6]
-    elif ('Top.avi' in video_name):
-        mouse_name = video_name[:-8]
-    elif ('Top.mpg' in video_name):
-        mouse_name = video_name[:-8]
+    elif ('_Top.' in video_name):
+        mouse_name = os.path.splitext(video_name)[0]
+        mouse_name = mouse_name.replace('_Top','')
     elif ('Front_J85.seq' in video_name):
         mouse_name = video_name[:-14]
     elif ('Front.seq' in video_name):
@@ -28,22 +27,15 @@ def get_names(video_name):
     if 'J85' in video_name:
         top_ending = '_Top_J85.seq'
         front_ending = '_Front_J85.seq'
-    elif 'avi' in video_name:
-        top_ending='_Top.avi'
-        front_ending=''
-    elif 'mpg' in video_name:
-        top_ending='_Top.mpg'
-        front_ending=''
-    elif 'mp4' in video_name:
-        top_ending='_Top.mp4'
-        front_ending=''
     elif any(x in video_name for x in ['_s','_t']):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
     else:
-        top_ending = '_Top.seq'
-        front_ending = '_Front.seq'
+        ext = os.path.splitext(video_name)[1]
+        top_ending = '_Top'+ext
+        front_ending = '_Front'+ext
 
+    
     top_name = mouse_name + top_ending
     front_name = mouse_name + front_ending
     return front_name, top_name, mouse_name

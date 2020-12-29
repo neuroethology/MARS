@@ -44,13 +44,9 @@ def classify_actions_wrapper(top_video_fullpath,
         # Make their matfile names.
         if 'pcf' in classifier_path:
             top_feat_basename = top_feat_basename[:-4] + 'pcf_'+top_feat_basename[-4:]
-        if 'wnd' in classifier_path:
+        else:
             front_feat_name = front_feat_basename + '_wnd.npz'
             top_feat_name = top_feat_basename + '_wnd.npz'
-        else:
-            front_feat_name = front_feat_basename + '.npz'
-            top_feat_name = top_feat_basename + '.npz'
-
 
         # Check that features exist.
         top_feats_exist = os.path.exists(top_feat_name)
