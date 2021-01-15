@@ -85,7 +85,8 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 raise ValueError('Invalid view type, please specify top or front.')
                 return
 
-            # create the movie reader:
+            if verbose:
+                print('    creating the movie reader...')
             reader = vidReader(video_fullpath)
             NUM_FRAMES = reader.NUM_FRAMES
             IM_H = reader.IM_H
@@ -93,6 +94,8 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
             fps = reader.fps
             medianFrame = []
             if mars_opts['bgSubtract']:
+                if verbose:
+                    print('    calculating background...')
                 medianFrame = get_median_frame(vc,'cv2')
 
 

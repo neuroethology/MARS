@@ -127,7 +127,7 @@ class ImportGraphPose():
                 log_device_placement=False,
                 allow_soft_placement=True,
                 # gpu_options=tf.GPUOptions(allow_growth=True))
-                gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.45))
+                gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.35))
 
             self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
 
