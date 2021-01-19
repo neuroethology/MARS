@@ -162,7 +162,7 @@ class MainWindow(QMainWindow):
         self.overwrite_chbox.setVisible(False)
 
         ## Checkboxes that pick which view(s) to use, as well as the internal values they represent.
-        self.doTop = 0
+        self.doTop = 1 # change to 0 if we want to re-enable view checkboxes
         self.top_chbox = QCheckBox('[Top]', self)
         self.top_chbox.stateChanged.connect(self.checkDoTop)
         self.top_chbox.setVisible(False)
@@ -233,11 +233,11 @@ class MainWindow(QMainWindow):
         self.menu_layout.addWidget(self.toolbar2)
 
         # Layout for the view selection (Top, Toppcf, Front)
-        self.view_layout = QHBoxLayout()
-        self.view_layout.addWidget(self.top_chbox)
-        self.view_layout.addWidget(self.toppcf_chbox)
-        self.view_layout.addWidget(self.front_chbox)
-        self.view_layout.addStretch()
+        # self.view_layout = QHBoxLayout()
+        # self.view_layout.addWidget(self.top_chbox)
+        # self.view_layout.addWidget(self.toppcf_chbox)
+        # self.view_layout.addWidget(self.front_chbox)
+        # self.view_layout.addStretch()
 
         # Layout for the checkboxes.
         self.chbox_layout = QHBoxLayout()
@@ -285,7 +285,7 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(self.toto)
         self.main_layout.addLayout(self.button_layout)
         self.main_layout.addWidget(self.todo)
-        self.main_layout.addLayout(self.view_layout)
+        # self.main_layout.addLayout(self.view_layout)
         self.main_layout.addLayout(self.chbox_layout)
         self.main_layout.addLayout(self.active_layout)
         self.main_layout.addWidget(self.progress)

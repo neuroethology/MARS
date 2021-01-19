@@ -43,7 +43,10 @@ def classify_actions_wrapper(top_video_fullpath,
 
         # Make their matfile names.
         if 'pcf' in classifier_path:
-            top_feat_basename = top_feat_basename[:-4] + 'pcf_'+top_feat_basename[-4:]
+            # more hiding pcf features shenanigans, hopefully the last time?
+            # top_feat_basename = top_feat_basename[:-4] + 'pcf_'+top_feat_basename[-4:]
+            front_feat_name = front_feat_basename + '_wnd.npz'
+            top_feat_name = top_feat_basename + '_wnd.npz'
         else:
             front_feat_name = front_feat_basename + '_wnd.npz'
             top_feat_name = top_feat_basename + '_wnd.npz'

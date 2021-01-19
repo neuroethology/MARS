@@ -174,7 +174,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                     #                                     front_video_fullpath = fullpath_to_front,
                     #                                     doOverwrite = mars_opts['doOverwrite'],
                     #                                     output_suffix='')
-                    if mars_opts['doTop']:
+                    if mars_opts['doTop'] or mars_opts['doToppcf']:
                         send_update('   Extracting top features from ' + top_fname + '...', output_mode, gui_handle)
                         mfe.extract_top_features_wrapper(top_video_fullpath=fullpath_to_top,
                                                          doOverwrite=mars_opts['doOverwrite'],
@@ -184,22 +184,16 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         send_update('   saved.', output_mode, gui_handle)
                         if output_mode == 'gui': gui_handle.update_th.emit(2)
 
-                    if mars_opts['doToppcf']:
-                        send_update('Extracting top pcf features from ' + top_fname + '...', output_mode, gui_handle)
-                        # I'm temporarily secretly disabling this option while I update the classifiers, shh.
-                        mfe.extract_top_features_wrapper(top_video_fullpath=fullpath_to_top,
-                                                             doOverwrite=mars_opts['doOverwrite'],
-                                                             progress_bar_sig=gui_handle.update_progbar_sig,
-                                                             output_suffix='',
-                                                             max_frames=mars_opts['max_frames'])
-                        # mfe.extract_top_pcf_features_wrapper(top_video_fullpath=fullpath_to_top,
-                        #                                      front_video_fullpath=fullpath_to_front,
-                        #                                      doOverwrite=mars_opts['doOverwrite'],
-                        #                                      progress_bar_sig=gui_handle.update_progbar_sig,
-                        #                                      output_suffix='',
-                        #                                      max_frames=mars_opts['max_frames'])
-                        send_update('   saved.', output_mode, gui_handle)
-                        if output_mode=='gui': gui_handle.update_th.emit(2)
+                    # if mars_opts['doToppcf']:
+                    #     send_update('Extracting top pcf features from ' + top_fname + '...', output_mode, gui_handle)
+                    #     mfe.extract_top_pcf_features_wrapper(top_video_fullpath=fullpath_to_top,
+                    #                                          front_video_fullpath=fullpath_to_front,
+                    #                                          doOverwrite=mars_opts['doOverwrite'],
+                    #                                          progress_bar_sig=gui_handle.update_progbar_sig,
+                    #                                          output_suffix='',
+                    #                                          max_frames=mars_opts['max_frames'])
+                    #     send_update('   saved.', output_mode, gui_handle)
+                    #     if output_mode=='gui': gui_handle.update_th.emit(2)
 
                     if mars_opts['doFront']:
                         send_update('Extracting front features from ' + front_fname + '...', output_mode, gui_handle)
@@ -218,18 +212,18 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
 
                 if mars_opts['doActions']:
                     send_update('Predicting actions from ' + top_fname + '...', output_mode, gui_handle)
-                    if mars_opts['doToppcf']:
-                        classifier_path = mars_opts['classifier_pcf_model']
+                    # if mars_opts['doToppcf']:
+                    #     classifier_path = mars_opts['classifier_pcf_model']
+                    #
+                    #     mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
+                    #                                  front_video_fullpath='',
+                    #                                  doOverwrite=mars_opts['doOverwrite'],
+                    #                                  view='toppcf',
+                    #                                  classifier_path=classifier_path)
+                    #     send_update('   saved.', output_mode, gui_handle)
+                    #     if output_mode == 'gui': gui_handle.update_th.emit(3)
 
-                        mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
-                                                     front_video_fullpath='',
-                                                     doOverwrite=mars_opts['doOverwrite'],
-                                                     view='toppcf',
-                                                     classifier_path=classifier_path)
-                        send_update('   saved.', output_mode, gui_handle)
-                        if output_mode == 'gui': gui_handle.update_th.emit(3)
-
-                    if mars_opts['doTop']:
+                    if mars_opts['doTop'] or mars_opts['doToppcf']: #temporarily bypassing toppcf
                         classifier_path = mars_opts['classifier_model']
 
                         mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
