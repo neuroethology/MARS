@@ -21,7 +21,7 @@ First, **install CUDA** by following the [NVIDIA CUDA installation guide](https:
 
 
 ## Setting up the MARS conda environment
-1) If you don't already have it, **install** miniconda by downloading the Python 3.x version appropriate to your system from [this page](https://docs.conda.io/en/latest/miniconda.html).
+1) If you don't already have it, **install** miniconda by downloading the Python 3.x version appropriate to your system from [this page](https://docs.conda.io/en/latest/miniconda.html). Likewise, **install** git from [this page](https://git-scm.com/download/win).
 2) **Check** your install by opening a new **Anaconda Prompt** and typing `where python`. This should return one or more paths to python executables- make sure this includes something with `miniconda3`, like `C:\Users\me\miniconda3\python.exe`.  
 
 3) **Clone** or download the contents of this GitHub repository. For this guide we'll assume you downloaded everything to `C:\users\me\MARS`.
