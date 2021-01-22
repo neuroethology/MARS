@@ -66,8 +66,8 @@ Please refer to `config.yml` to see the full list of available options.
 ### Running with the MARS GUI
 To run MARS using the GUI, take the following steps:
 1. Depending on your system:
-   - **Windows** launch an Anaconda Prompt by searching Anaconda in the Start Menu.
-   - **Linux** launch a new terminal.
+   - **Windows**:  launch an Anaconda Prompt by searching Anaconda in the Start Menu.
+   - **Linux**:  launch a new terminal.
 2. Navigate to the MARS v1.8 directory by calling `cd Documents/Github/MARS/mars_v1_8` (or whatever the path to MARS is on your system.)
 3. Activate the MARS conda environment by typing `conda activate mars` (or `system activate mars`).
 4. Launch the MARS gui by calling:
