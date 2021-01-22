@@ -64,11 +64,19 @@ MARS.run_MARS(folder, user_opts=opts)
 Please refer to `config.yml` to see the full list of available options.
 
 ### Running with the MARS GUI
-To run MARS using the GUI, simply call `MARS.py` from the terminal:
+To run MARS using the GUI, take the following steps:
+1. Depending on your system:
+   - **Windows** launch an Anaconda Prompt by searching Anaconda in the Start Menu.
+   - **Linux** launch a new terminal.
+2. Navigate to the MARS v1.8 directory by calling `cd Documents/Github/MARS/mars_v1_8` (or whatever the path to MARS is on your system.)
+3. Activate the MARS conda environment by typing `conda activate mars` (or `system activate mars`).
+4. Launch the MARS gui by calling:
 ```
 python MARS.py
 ```
-First, click <kbd>Browse</kbd> and navigate to the directory containing your videos. If MARS finds any videos in that directory, it will display additional buttons to set run options:
+To select videos to analyze, click <kbd>Browse</kbd> and navigate to the directory containing your videos. **Note**: the current version of MARS will only find your videos if they have filenames ending in "_Top"!
+
+If MARS finds any videos in the selected directory, it will display additional buttons to set run options:
 <div align=center>
 <img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_gui.png?raw=true'>
 </div>
