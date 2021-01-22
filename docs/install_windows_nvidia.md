@@ -11,7 +11,7 @@ MARS currently runs on TensorFlow version 1.15. You won't need to install Tensor
 First, **install CUDA** by following the [NVIDIA CUDA installation guide](https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/), the core of which is to:
 1) Go to [https://developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads), and enter your platform information.
 2) Download and run the provided `*.exe` file.
-3) Call `nvcc --version` from your terminal to confirm that CUDA has installed correctly. You may need to launch a new terminal for the command to be recognized.
+3) Open a terminal by searching "cmd" in your start menu, and enter `nvcc --version` to confirm that CUDA has installed correctly.
 
 
  Next, **install cuDNN** by following the [NVIDIA cuDNN installation guide](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html), the core of which is to:
@@ -21,8 +21,10 @@ First, **install CUDA** by following the [NVIDIA CUDA installation guide](https:
 
 
 ## Setting up the MARS conda environment
-1) If you don't already have it, **install** miniconda by downloading the Python 3.x version appropriate to your system from [this page](https://docs.conda.io/en/latest/miniconda.html). Likewise, **install** git from [this page](https://git-scm.com/download/win).
-2) **Check** your install by opening a new **Anaconda Prompt** and typing `where python`. This should return one or more paths to python executables- make sure this includes something with `miniconda3`, like `C:\Users\me\miniconda3\python.exe`.  
+1) **Install** two prerequisites:
+ - Install miniconda by downloading the Python 3.x version appropriate to your system from [this page](https://docs.conda.io/en/latest/miniconda.html). 
+ - Install git from [this page](https://git-scm.com/download/win).
+2) **Check** your install by opening a new **Anaconda Prompt** (launched by searching "Anaconda" in the start menu) and typing `where python`. This should return one or more paths to python executables- make sure this includes something with `miniconda3`, like `C:\Users\me\miniconda3\python.exe`.  
 
 3) **Clone** or download the contents of this GitHub repository. For this guide we'll assume you downloaded everything to `C:\users\me\MARS`.
     ```
@@ -32,12 +34,12 @@ First, **install CUDA** by following the [NVIDIA CUDA installation guide](https:
     (or read about other ways to clone/download repos [here](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/cloning-a-repository)).
 >Note: the `--recurse-submodules` also ensures that the contents of the `neuroethology/Util` repository are also cloned when you clone MARS. `Util` contains code that is common to multiple projects on [Neuroethology](https://github.com/neuroethology). If you didn't include this tag in the initial clone, you can clone the `Util` repo later by calling `git submodule update --init --recursive` from within the MARS directory.
 
-4) **Build** the MARS conda environment by entering the following in an Anaconda Prompt:
+4) **Build** the MARS conda environment by entering the following in an Anaconda Prompt (launched by searching "Anaconda" in the start menu):
     ```
     cd C:\users\me\MARS
     conda env create -f MARS_environment_windows.yml
     ```
-  Once the build has finished, you can activate the MARS environment by calling `conda activate mars` (or `system activate mars`).
+  Once the build has finished, you can activate the MARS environment by calling `conda activate mars` (or `system activate mars`) from the Anaconda Prompt.
 
 
 ## Downloading the trained MARS models
