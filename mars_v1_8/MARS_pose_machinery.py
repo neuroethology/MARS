@@ -181,7 +181,7 @@ def pre_process_image(image, medianFrame, IM_TOP_H, IM_TOP_W, DET_IM_SIZE):
     if medianFrame:
         prep_image = np.divide(np.add(prep_image, -4.).astype(np.float32), 4.)
     else:
-        prep_image = np.divide(cv2.add(prep_image.astype(int), -128).astype(np.float32), 128.)
+        prep_image = (prep_image - 128) / 128
 
     # Convert to RGB if necessary.
     if len(prep_image.shape) < 3:
@@ -310,10 +310,7 @@ def extract_resize_crop_bboxes(bboxes, IM_W, IM_H, image):
         """
 
         # do per-image processing here, when the images are still 2D, to save time
-        im = im.astype(int)
-        im = cv2.add(im, -128)
-        im = im.astype(np.float32)
-        im = cv2.divide(im, 128.)
+        im = (im - 128) / 128 
         if len(im.shape) < 3:
             im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
 
