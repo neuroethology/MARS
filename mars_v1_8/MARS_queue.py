@@ -118,9 +118,9 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
 
         # Get the number of videos we're going to process, to give people an impression of time.
         total_valid_videos = len(trials_to_run)
-        send_update('found %d valid videos for analysis.' % total_valid_videos, output_mode, gui_handle)
+        send_update('Found %d valid videos for analysis.\n' % total_valid_videos, output_mode, gui_handle)
         if output_mode=='gui':
-            gui_handle.update_big_progbar_sig.emit(0, total_valid_videos - 1)
+            gui_handle.update_big_progbar_sig.emit(0, total_valid_videos)
 
         videos_processed = 0
         for trial in trials_to_run:
@@ -133,12 +133,12 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
 
                 cumulative_progress = ' '.join(
                     [" |", str(videos_processed + 1), "out of", str(total_valid_videos), "total videos"])
-                print('Processing ' + top_fname + cumulative_progress + ' \n')
+                send_update('Processing ' + top_fname + cumulative_progress + '\n', output_mode, gui_handle)
 
                 if mars_opts['doPose']:
 
                     if mars_opts['doFront']:
-                        print("   Extracting front pose from " + front_fname + "...")
+                        send_update("   Extracting front pose from " + front_fname + " ... ", output_mode, gui_handle)
                         mpe.extract_pose_wrapper(video_fullpath=fullpath_to_front,
                                                  view='front',
                                                  doOverwrite=mars_opts['doOverwrite'],
@@ -149,7 +149,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         send_update("saved.\n", output_mode, gui_handle)
 
                     if mars_opts['doTop'] or mars_opts['doToppcf']:
-                        print("   Extracting top pose from " + top_fname + "...")
+                        send_update("   Extracting top pose from " + top_fname + " ... ", output_mode, gui_handle)
                         mpe.extract_pose_wrapper(video_fullpath=fullpath_to_top,
                                                  view='top',
                                                  doOverwrite=mars_opts['doOverwrite'],
@@ -157,7 +157,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                                                  mars_opts=mars_opts,
                                                  verbose=mars_opts['verbose'],
                                                  max_frames=mars_opts['max_frames'])
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
 
                     if not (mars_opts['doFront'] | mars_opts['doTop'] | mars_opts['doToppcf']):
                         view_msg = "ERROR: You need to select at least one view to use."
@@ -174,35 +174,35 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                     #                                     doOverwrite = mars_opts['doOverwrite'],
                     #                                     output_suffix='')
                     if mars_opts['doTop']:
-                        send_update('   Extracting top features from ' + top_fname + '...', output_mode, gui_handle)
+                        send_update('   Extracting top features from ' + top_fname + ' ... ', output_mode, gui_handle)
                         mfe.extract_top_features_wrapper(top_video_fullpath=fullpath_to_top,
                                                          doOverwrite=mars_opts['doOverwrite'],
                                                          progress_bar_sig=gui_handle.update_progbar_sig,
                                                          output_suffix='',
                                                          max_frames=mars_opts['max_frames'])
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
                         if output_mode == 'gui': gui_handle.update_th.emit(2)
 
                     if mars_opts['doToppcf']:
-                        send_update('Extracting top pcf features from ' + top_fname + '...', output_mode, gui_handle)
+                        send_update('   Extracting top pcf features from ' + top_fname + ' ... ', output_mode, gui_handle)
                         mfe.extract_top_pcf_features_wrapper(top_video_fullpath=fullpath_to_top,
                                                              front_video_fullpath=fullpath_to_front,
                                                              doOverwrite=mars_opts['doOverwrite'],
                                                              progress_bar_sig=gui_handle.update_progbar_sig,
                                                              output_suffix='',
                                                              max_frames=mars_opts['max_frames'])
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
                         if output_mode=='gui': gui_handle.update_th.emit(2)
 
                     if mars_opts['doFront']:
-                        send_update('Extracting front features from ' + front_fname + '...', output_mode, gui_handle)
+                        send_update('   Extracting front features from ' + front_fname + ' ... ', output_mode, gui_handle)
                         mfe.extract_front_features_wrapper(top_video_fullpath=fullpath_to_top,
                                                            front_video_fullpath=fullpath_to_front,
                                                            doOverwrite=mars_opts['doOverwrite'],
                                                            progress_bar_sig=gui_handle.update_progbar_sig,
                                                            output_suffix='',
                                                            max_frames=mars_opts['max_frames'])
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
                         if output_mode == 'gui': gui_handle.update_th.emit(2)
 
                     if not (mars_opts['doTop'] | mars_opts['doToppcf']):
@@ -210,8 +210,8 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         raise Warning(view_msg)
 
                 if mars_opts['doActions']:
-                    send_update('Predicting actions from ' + top_fname + '...', output_mode, gui_handle)
                     if mars_opts['doToppcf']:
+                        send_update('   Predicting actions using Toppcf from ' + top_fname + ' ... ', output_mode, gui_handle)
                         # TODO: Don't hardcode this maybe?
                         classifier_type = 'top_pcf_tm_xgb500_wnd'
 
@@ -220,10 +220,11 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                                                      doOverwrite=mars_opts['doOverwrite'],
                                                      view='toppcf',
                                                      classifier_path='models/classifier/' + classifier_type)
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
                         if output_mode == 'gui': gui_handle.update_th.emit(3)
 
                     if mars_opts['doTop']:
+                        send_update('   Predicting actions from ' + top_fname + ' ... ', output_mode, gui_handle)
                         # TODO: Don't hardcode this maybe?
                         classifier_type = 'top_tm_xgb500_wnd'
 
@@ -232,7 +233,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                                                      doOverwrite=mars_opts['doOverwrite'],
                                                      view='top',
                                                      classifier_path='models/classifier/' + classifier_type)
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
                         if output_mode == 'gui': gui_handle.update_th.emit(3)
 
                     if not mars_opts['doTop'] and not mars_opts['doToppcf']:
@@ -249,13 +250,13 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         # TODO: Don't hardcode this maybe?
                         classifier_type = 'top_pcf_tm_xgb500_wnd' if mars_opts['doToppcf'] else 'top_tm_xgb500_wnd'
 
-                        send_update('   Creating results video for ' + top_fname + '...', output_mode, gui_handle)
+                        send_update('   Creating results video for ' + top_fname + ' ... ', output_mode, gui_handle)
                         mcv.create_video_results_wrapper(top_video_fullpath=fullpath_to_top,
                                                          classifier_path='models/classifier/' + classifier_type,
                                                          doOverwrite=mars_opts['doOverwrite'],
                                                          progress_bar_signal=gui_handle.update_progbar_sig,
                                                          view='top')
-                        send_update('   saved.', output_mode, gui_handle)
+                        send_update('saved.\n', output_mode, gui_handle)
 
                 if output_mode == 'gui': gui_handle.done_th.emit()
                 count += 1

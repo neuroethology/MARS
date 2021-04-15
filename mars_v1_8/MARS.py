@@ -1,9 +1,9 @@
 import sys
-from multiprocessing import Queue
 import time
+from platform import system
+from multiprocessing import Queue, set_start_method
 from pathlib import Path
 from MARS_queue import *
-
 
 def get_mars_default_options():
     with open('config.yml') as f:
@@ -26,8 +26,11 @@ def run_MARS(folders, user_opts=dict()):
 
 
 if __name__ == '__main__':
+    # avoid multiprocessing problem on Macs
+    if system() == 'Darwin':
+        set_start_method('forkserver', force=True)
+            
     # launch MARS gui if call came from terminal
-
     # more imports are needed for gui support
     from MARS_gui import *
 

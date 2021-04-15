@@ -122,17 +122,17 @@ class MainWindow(QMainWindow):
         self.todo.setVisible(False)
 
         ## Various checkboxes for activities to perform within MARS.
-        self.doPose = 0
+        self.doPose = False
         self.pose_chbox = QCheckBox('[Pose]', self)
         self.pose_chbox.stateChanged.connect(self.checkDoPose)
         self.pose_chbox.setVisible(False)
 
-        self.doFeats = 0
+        self.doFeats = False
         self.feat_chbox = QCheckBox('[Features]', self)
         self.feat_chbox.stateChanged.connect(self.checkDoFeat)
         self.feat_chbox.setVisible(False)
 
-        self.doActions = 0
+        self.doActions = False
         self.actions_chbox = QCheckBox('[Classify Actions]', self)
         self.actions_chbox.stateChanged.connect(self.checkDoActions)
         self.actions_chbox.setVisible(False)
@@ -150,29 +150,29 @@ class MainWindow(QMainWindow):
         # self.ddlist.resize(150, 50)
         # self.ddlist.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
-        self.doVideo = 0
+        self.doVideo = False
         self.video_chbox = QCheckBox('[Produce Video]', self)
         self.video_chbox.stateChanged.connect(self.checkDoVideo)
         self.video_chbox.setVisible(False)
 
-        self.doOverwrite = 0
+        self.doOverwrite = False
         self.overwrite_chbox = QCheckBox('[Overwrite]', self)
         self.overwrite_chbox.setStyleSheet("background-color: #ff7a7a")
         self.overwrite_chbox.stateChanged.connect(self.checkDoOverwrite)
         self.overwrite_chbox.setVisible(False)
 
         ## Checkboxes that pick which view(s) to use, as well as the internal values they represent.
-        self.doTop = 0
+        self.doTop = False
         self.top_chbox = QCheckBox('[Top]', self)
         self.top_chbox.stateChanged.connect(self.checkDoTop)
         self.top_chbox.setVisible(False)
 
-        self.doToppcf = 0
+        self.doToppcf = False
         self.toppcf_chbox = QCheckBox('[Top (w/ Front pixel features)]', self)
         self.toppcf_chbox.stateChanged.connect(self.checkDoToppcf)
         self.toppcf_chbox.setVisible(False)
 
-        self.doFront = 0
+        self.doFront = False
         self.front_chbox = QCheckBox('[Front]', self)
         self.front_chbox.stateChanged.connect(self.checkDoFront)
         self.front_chbox.setVisible(False)
@@ -348,82 +348,64 @@ class MainWindow(QMainWindow):
 
 
     def checkDoPose(self, state):
-        if state ==QtCore.Qt.Checked:
-            self.doPose = 1
-        else:
-            self.doPose = 0
+        self.doPose = (state == QtCore.Qt.Checked)
 
     def checkDoFeat(self, state):
-        if state ==QtCore.Qt.Checked:
-            self.doFeats = 1
-        else:
-            self.doFeats = 0
+        self.doFeats = (state == QtCore.Qt.Checked)
 
     def checkDoActions(self, state):
-        if state ==QtCore.Qt.Checked:
-            self.doActions = 1
-        else:
-            self.doActions = 0
+        self.doActions = (state == QtCore.Qt.Checked)
 
     def checkDoVideo(self, state):
-        if state ==QtCore.Qt.Checked:
-            self.doVideo = 1
-        else:
-            self.doVideo = 0
+        self.doVideo = (state == QtCore.Qt.Checked)
 
     def checkDoOverwrite(self,state):
-        if state == QtCore.Qt.Checked:
-            self.doOverwrite = 1
-        else:
-            self.doOverwrite = 0
+        self.doOverwrite = (state == QtCore.Qt.Checked)
 
     def checkDoTop(self,state):
-        if state == QtCore.Qt.Checked:
-            self.doTop = 1
-            # self.ddlist.addItem("top mlp")
-            # self.ddlist.addItem("top xgb")
-            # self.ddlist.addItem("top mlp wnd")
-            # self.ddlist.addItem("top xgb wnd")
-        else:
-            self.doTop = 0
-            # self.ddlist.clear()
+        self.doTop = (state == QtCore.Qt.Checked)
+        # if self.doTop:
+        #     self.ddlist.addItem("top mlp")
+        #     self.ddlist.addItem("top xgb")
+        #     self.ddlist.addItem("top mlp wnd")
+        #     self.ddlist.addItem("top xgb wnd")
+        # else:
+        #     self.ddlist.clear()
 
     def checkDoToppcf(self,state):
-        if state == QtCore.Qt.Checked:
-            self.doToppcf = 1
-            # self.ddlist.addItem("top pcf mlp")
-            # self.ddlist.addItem("top pcf xgb")
-            # self.ddlist.addItem("top pcf mlp wnd")
-            # self.ddlist.addItem("top pcf xgb wnd")
-        else:
-            self.doToppcf = 0
-            # self.ddlist.clear()
+        self.doToppcf = (state == QtCore.Qt.Checked)
+        # if self.doToppcf:
+        #     self.ddlist.addItem("top pcf mlp")
+        #     self.ddlist.addItem("top pcf xgb")
+        #     self.ddlist.addItem("top pcf mlp wnd")
+        #     self.ddlist.addItem("top pcf xgb wnd")
+        # else:
+        #     self.ddlist.clear()
 
     def checkDoFront(self,state):
-        if state == QtCore.Qt.Checked:
-            self.doFront = 1
-            # self.ddlist.addItem("topfront mlp")
-            # self.ddlist.addItem("topfront xgb")
-            # self.ddlist.addItem("topfront mlp wnd")
-            # self.ddlist.addItem("topfront xgb wnd")
-        else:
-            self.doFront = 0
-            # self.ddlist.clear()
+        self.doFront = (state == QtCore.Qt.Checked)
+        # if self.doFront:
+        #     self.ddlist.addItem("topfront mlp")
+        #     self.ddlist.addItem("topfront xgb")
+        #     self.ddlist.addItem("topfront mlp wnd")
+        #     self.ddlist.addItem("topfront xgb wnd")
+        # else:
+        #     self.ddlist.clear()
 
     def reset(self):
         todo = [self.doPose, self.doFeats, self.doActions]
         # if not self.todo.isVisible() or  sum(todo)== 0:
         #     QMessageBox.information(self, "Reset", "Nothing to reset")
         # else:
-        self.doPose = 0
-        self.doFeats = 0
-        self.doActions = 0
-        self.doVideo = 0
-        self.doOverwrite = 0
+        self.doPose = False
+        self.doFeats = False
+        self.doActions = False
+        self.doVideo = False
+        self.doOverwrite = False
 
-        self.doFront = 0
-        self.doTop = 0
-        self.doToppcf = 0
+        self.doFront = False
+        self.doTop = False
+        self.doToppcf = False
 
         self.pose_chbox.setCheckState(QtCore.Qt.Unchecked)
         self.feat_chbox.setCheckState(QtCore.Qt.Unchecked)
