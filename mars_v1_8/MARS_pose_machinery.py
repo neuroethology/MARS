@@ -11,6 +11,7 @@ from pathlib import Path
 
 import os, sys
 import pickle
+import logging
 
 def get_macOS_version_info():
     if platform.system() != "Darwin":
@@ -19,7 +20,11 @@ def get_macOS_version_info():
 
 major, minor, _ = get_macOS_version_info()
 if major == 10 and minor >= 15:
+    root_logger = logging.getLogger()
+    saved_level = root_logger.level
+    root_logger.setLevel(logging.ERROR)
     import coremltools as cmt
+    root_logger.setLevel(saved_level)
     use_coreml = True
 else:
     use_coreml = False
@@ -174,7 +179,7 @@ def pre_process_image(image, medianFrame, IM_TOP_H, IM_TOP_W, DET_IM_SIZE):
         norm_image = cv2.divide(image.astype(np.float32), medianFrame.astype(np.float32))
         norm_image = np.minimum(norm_image, 8.0)
     else:
-        norm_image = image
+        norm_image = image.astype(np.float32)
 
     # Resize the image to the size the detector takes.
     prep_image = cv2.resize(norm_image, (DET_IM_SIZE, DET_IM_SIZE), interpolation=cv2.INTER_NEAREST)
@@ -302,7 +307,7 @@ def extract_resize_crop_bboxes(bboxes, IM_W, IM_H, image):
         bbox_x1, bbox_y1, bbox_x2, bbox_y2 = bbox
 
         # Crop the image.
-        bbox_image = image[bbox_y1:bbox_y2, bbox_x1:bbox_x2]
+        bbox_image = image[bbox_y1:bbox_y2, bbox_x1:bbox_x2].astype(np.float32)
 
         # Resize the image to the pose input size.
         im = cv2.resize(bbox_image, (POSE_IM_SIZE, POSE_IM_SIZE), interpolation=cv2.INTER_NEAREST)
