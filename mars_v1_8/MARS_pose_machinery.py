@@ -29,6 +29,18 @@ if major == 10 and minor >= 15:
 else:
     use_coreml = False
 
+def get_macOS_version_info():
+    if platform.system() != "Darwin":
+        return (0, 0, 0)
+    return tuple(map(int, platform.mac_ver()[0].split('.')))
+
+major, minor, _ = get_macOS_version_info()
+if major == 10 and minor >= 15:
+    import coremltools as cmt
+    use_coreml = True
+else:
+    use_coreml = False
+
 class ImportGraphDetection():
     """ Convenience class for setting up the detector and using it."""
     def __init__(self, quant_model):
@@ -134,7 +146,7 @@ class ImportGraphPose():
                 log_device_placement=False,
                 allow_soft_placement=True,
                 # gpu_options=tf.GPUOptions(allow_growth=True))
-                gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.45))
+                gpu_options=tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=.35))
 
             self.sess = tf.compat.v1.Session(graph=self.graph, config=sess_config)
 

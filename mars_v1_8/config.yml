@@ -7,6 +7,8 @@ black_detector_top: models/detection/MARS_top_detection_black.pb
 white_detector_top: models/detection/MARS_top_detection_white.pb
 front_pose_model: models/pose/MARS_front_pose.pb
 top_pose_model: models/pose/MARS_top_pose.pb
+classifier_model: models/classifier/top_xgb_wnd
+classifier_pcf_model: models/classifier/top_pcf_xgb_wnd
 
 # which stages of analysis to run- pose estimation, feature extraction, and behavior classification
 # feature extraction is a required step if you wish to do behavior classification, and

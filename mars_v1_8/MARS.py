@@ -24,7 +24,6 @@ def run_MARS(folders, user_opts=dict()):
     print('Finished processing all the data in the queue!')
     return
 
-
 if __name__ == '__main__':
     # avoid multiprocessing problem on Macs
     if system() == 'Darwin':
