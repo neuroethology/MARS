@@ -189,6 +189,9 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
             else:   # don't use multiprocessing, but process frames in batches
                 time_steps = True
 
+                if progress_bar_signal:
+                    # Update the progress bar with the number of total frames it will be processing.
+                    progress_bar_signal.emit(0, NUM_FRAMES)
 
                 if time_steps:
                     process_time = [0.] * 10

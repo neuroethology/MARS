@@ -159,4 +159,5 @@ dependencies:
     - colour-demosaicing==0.1.5
     - colour-science==0.3.15
     - hmmlearn==0.2.4
-prefix: C:\Users\Ann\miniconda3\envs\mars
+prefix: C:\Users\MARS\miniconda3\envs\mars
+
