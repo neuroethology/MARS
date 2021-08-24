@@ -31,6 +31,8 @@ if major == 10 and minor >= 15:
     use_coreml = True
 else:
     use_coreml = False
+
+    
 class ImportGraphDetection():
     """ Convenience class for setting up the detector and using it."""
     def __init__(self, quant_model):
@@ -58,7 +60,7 @@ class ImportGraphDetection():
 
         else:   # use the TensorFlow model
             # Read the graph protocol buffer (.pb) file and parse it to retrieve the unserialized graph definition.
-            print("ImportGraphDetection: Running with TensorFlow (no GPU on Mac)")
+            # print("ImportGraphDetection: Running with TensorFlow (no GPU on Mac)")
             with tf.io.gfile.GFile(quant_model, 'rb') as f:
                 self.graph_def = tf.compat.v1.GraphDef()
                 self.graph_def.ParseFromString(f.read())
@@ -121,7 +123,7 @@ class ImportGraphPose():
 
         else:   # use TensorFlow model
             # Read the graph protbuf (.pb) file and parse it to retrieve the unserialized graph definition.
-            print("ImportGraphPose: Running with TensorFlow (no GPU on Mac)")
+            # print("ImportGraphPose: Running with TensorFlow (no GPU on Mac)")
             with tf.io.gfile.GFile(quant_model, 'rb') as f:
                 self.graph_def = tf.compat.v1.GraphDef()
                 self.graph_def.ParseFromString(f.read())
