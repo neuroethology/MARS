@@ -16,7 +16,10 @@ import logging
 def get_macOS_version_info():
     if platform.system() != "Darwin":
         return (0, 0, 0)
-    return tuple(map(int, platform.mac_ver()[0].split('.')))
+    version = list(map(int, platform.mac_ver()[0].split('.')))
+    for ix in range(len(version), 3):
+        version.append(0)
+    return tuple(version)
 
 major, minor, _ = get_macOS_version_info()
 if major == 10 and minor >= 15:
@@ -29,18 +32,7 @@ if major == 10 and minor >= 15:
 else:
     use_coreml = False
 
-def get_macOS_version_info():
-    if platform.system() != "Darwin":
-        return (0, 0, 0)
-    return tuple(map(int, platform.mac_ver()[0].split('.')))
-
-major, minor, _ = get_macOS_version_info()
-if major == 10 and minor >= 15:
-    import coremltools as cmt
-    use_coreml = True
-else:
-    use_coreml = False
-
+    
 class ImportGraphDetection():
     """ Convenience class for setting up the detector and using it."""
     def __init__(self, quant_model):
@@ -65,10 +57,10 @@ class ImportGraphDetection():
                 self.ml_model = cmt.models.neural_network.quantization_utils.quantize_weights(mlmodel, 16)
                 self.ml_model.save(self.ml_model_path)
                 self.use_ml_model = True
-        
+
         else:   # use the TensorFlow model
             # Read the graph protocol buffer (.pb) file and parse it to retrieve the unserialized graph definition.
-            print("ImportGraphDetection: Running with TensorFlow (no GPU on Mac)")
+            # print("ImportGraphDetection: Running with TensorFlow (no GPU on Mac)")
             with tf.io.gfile.GFile(quant_model, 'rb') as f:
                 self.graph_def = tf.compat.v1.GraphDef()
                 self.graph_def.ParseFromString(f.read())
@@ -131,7 +123,7 @@ class ImportGraphPose():
 
         else:   # use TensorFlow model
             # Read the graph protbuf (.pb) file and parse it to retrieve the unserialized graph definition.
-            print("ImportGraphPose: Running with TensorFlow (no GPU on Mac)")
+            # print("ImportGraphPose: Running with TensorFlow (no GPU on Mac)")
             with tf.io.gfile.GFile(quant_model, 'rb') as f:
                 self.graph_def = tf.compat.v1.GraphDef()
                 self.graph_def.ParseFromString(f.read())
@@ -329,7 +321,7 @@ def extract_resize_crop_bboxes(bboxes, IM_W, IM_H, image):
         """
 
         # do per-image processing here, when the images are still 2D, to save time
-        im = (im - 128) / 128 
+        im = (im - 128) / 128
         if len(im.shape) < 3:
             im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
 
@@ -421,7 +413,7 @@ def pre_det_inner(raw_data, median_frame, IM_TOP_H, IM_TOP_W):
     top_input_image = pre_process_image(top_image, median_frame, IM_TOP_H, IM_TOP_W, DET_IM_SIZE)
 
     return [top_input_image, bbox], top_image
-    
+
 
 def pre_det(q_in, q_out_predet, q_out_raw, median_frame, IM_TOP_H, IM_TOP_W):
     """ Worker function that preprocesses raw images for input to the detection network.
@@ -497,7 +489,7 @@ def run_det(q_in,q_out, view, opts):
             if input_data == POISON_PILL:
                 q_out.put(POISON_PILL)
                 return
-        
+
             det_b = run_det_inner(input_data, det_black, opts)
             det_w = run_det_inner(input_data, det_white, opts)
             # Send the output to the post-detection processing worker.
@@ -583,7 +575,7 @@ def pre_hm_inner(det_out, raw_image, IM_W, IM_H):
 
     # Prepare the images for pose estimation, by extracting the proper cropped region.
     prepped_images = extract_resize_crop_bboxes(bboxes, IM_W, IM_H, raw_image)
-    
+
     return prepped_images, [bboxes, confs]
 
 

@@ -36,7 +36,7 @@ def get_names(video_name):
     # elif 'mp4' in video_name:
     #     top_ending='_Top.mp4'
     #     front_ending=''
-    elif any(x in video_name for x in ['_s','_t']):
+    elif any(x in video_name for x in ['_s.seq','_t.seq']):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
     else:
