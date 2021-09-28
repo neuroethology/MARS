@@ -88,4 +88,4 @@ You can track MARS's progress using the progress bars in the gui, or refer to yo
 ## Troubleshooting
 If you encounter any errors while running MARS, take the following steps:
 1. Check the [issues page](https://github.com/neuroethology/MARS/issues?q=is%3Aissue+) to see if anyone has encountered the same issue.
-2. If you can't resolve it, either submit a **new issue** on the issues page, or contact us <A HREF="&#109;&#97;&#105;&#108;&#116;&#111;&#58;%61%6E%6E%2E%6B%65%6E%6E%65%64%79%40%6E%6F%72%74%68%77%65%73%74%65%72%6E%2E%65%64%75">via email</A>.
+2. If you can't resolve it, either submit a new issue on the [issues page](https://github.com/neuroethology/MARS/issues?q=is%3Aissue+), or contact us <A HREF="&#109;&#97;&#105;&#108;&#116;&#111;&#58;%61%6E%6E%2E%6B%65%6E%6E%65%64%79%40%6E%6F%72%74%68%77%65%73%74%65%72%6E%2E%65%64%75">via email</A>.
