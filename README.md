@@ -14,7 +14,7 @@ MARS is an end-to-end computational pipeline for **tracking**, **pose estimation
  * [Troubleshooting](#troubleshooting)
 
 <div align=center>
-<img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_demo.gif?raw=true'>
+<img src='https://raw.githubusercontent.com/neuroethology/MARS/master/docs/mars_demo.gif'>
 </div>
 
 ## Requirements
@@ -24,7 +24,7 @@ MARS can be run on Linux, Windows, or MacOS. We strongly recommend running MARS 
 ### Data requirements
 MARS v1.8 works on top-view videos featuring pairs of interacting mice, with a black resident mouse and a white intruder mouse. MARS can be run on unoperated mice, or on videos in which one mouse has been implanted with a cable-attached device such as a microendoscope or fiberphotometry/optogenetic fiber.
 
-![Example video frames from the MARS training set](docs/sample_arenas.png)
+![Example video frames from the MARS training set](https://raw.githubusercontent.com/neuroethology/MARS/master/docs/sample_arenas.png)
 
 MARS performs best on videos taken in a standard home cage, at roughly 30Hz, and either in color or grayscale. We recommend the recording setup described in [Hong et al 2015](https://www.pnas.org/content/112/38/E5351.short), minus the depth camera (front-view camera is optional, and is not currently used in pose estimation.)
 
@@ -79,7 +79,7 @@ To select videos to analyze, click <kbd>Browse</kbd> and navigate to the directo
 
 If MARS finds any videos in the selected directory, it will display additional buttons to set run options:
 <div align=center>
-<img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_gui.png?raw=true'>
+<img src='https://raw.githubusercontent.com/neuroethology/MARS/master/docs/mars_gui.png'>
 </div>
 Click <kbd>Enqueue</kbd> to add your selected folder to MARS's work queue, then select the camera view you use (typically "Top") and the tasks you want to run (typically "Pose", "Features", and "Classify Actions".) Check "Produce Video" if you'd like MARS to generate a video of the tracked poses, and check "Overwrite" to overwrite previously generated MARS output. Finally, click the green <kbd>Run MARS</kbd> button to start running!
 
