@@ -11,6 +11,7 @@ MARS is an end-to-end computational pipeline for **tracking**, **pose estimation
 * [Running MARS](#running-mars)
     * [Running from the Python terminal](#running-from-the-python-terminal)
     * [Running from the MARS GUI](#running-from-the-mars-gui)
+ * [Troubleshooting](#troubleshooting)
 
 <div align=center>
 <img src='https://github.com/neuroethology/MARS/blob/develop/docs/mars_demo.gif?raw=true'>
@@ -83,3 +84,8 @@ If MARS finds any videos in the selected directory, it will display additional b
 Click <kbd>Enqueue</kbd> to add your selected folder to MARS's work queue, then select the camera view you use (typically "Top") and the tasks you want to run (typically "Pose", "Features", and "Classify Actions".) Check "Produce Video" if you'd like MARS to generate a video of the tracked poses, and check "Overwrite" to overwrite previously generated MARS output. Finally, click the green <kbd>Run MARS</kbd> button to start running!
 
 You can track MARS's progress using the progress bars in the gui, or refer to your terminal for more detailed progress updates.
+
+## Troubleshooting
+If you encounter any errors while running MARS, take the following steps:
+1. Check the [issues page](https://github.com/neuroethology/MARS/issues?q=is%3Aissue+) to see if anyone has encountered the same issue.
+2. If you can't resolve it, either submit a **new issue** on the issues page, or contact us <A HREF="&#109;&#97;&#105;&#108;&#116;&#111;&#58;%61%6E%6E%2E%6B%65%6E%6E%65%64%79%40%6E%6F%72%74%68%77%65%73%74%65%72%6E%2E%65%64%75">via email</A>.
