@@ -307,6 +307,9 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
             top_pose_frames['keypoints'] = np.array(top_pose_frames['keypoints'])
             top_pose_frames['scores'] = np.array(top_pose_frames['scores'])
     
+            top_pose_frames['covs'] = np.array(top_pose_frames['covs'])
+
+
             top_pose_frames['bbox'] = np.array(top_pose_frames['bbox'])
             top_pose_frames['bscores'] = np.array(top_pose_frames['bscores'])
     
