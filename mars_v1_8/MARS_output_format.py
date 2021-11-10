@@ -12,7 +12,7 @@ def get_names(video_name):
         mouse_name = video_name[:-6]
     elif ('_t.seq' in video_name):
         mouse_name = video_name[:-6]
-    elif ('_Top.' in video_name):
+    elif ('_Top.' in video_name or '_Top' in video_name):
         mouse_name = os.path.splitext(video_name)[0]
         mouse_name = mouse_name.replace('_Top','')
     elif ('Front_J85.seq' in video_name):
@@ -233,7 +233,7 @@ def dump_bento_across_dir(root_path):
             if (cond1) | cond2:
                 continue
 
-            if any(x in fname for x in ['Top','_t']):
+            if any(x in fname for x in ['Top']):
                 front_fname, top_fname, mouse_name = get_names(fname)
                 fullpath_to_front = os.path.join(path, front_fname)
                 fullpath_to_top = os.path.join(path, top_fname)
