@@ -100,19 +100,12 @@ def dump_bento_across_dir(root_path):
 
     for fname in nonaudio_filenames:
         try:
-            cond1 = '.seq' not in fname
-            cond2 = 'skipped' in path
-
-            if (cond1) | cond2:
+            cond1 = any(x in fname for x in mof.get_supported_formats())
+            if not cond1:
                 continue
 
-            if 'Top' in fname:
-                front_fname, top_fname, mouse_name = mof.get_names(fname)
-                fullpath_to_front = os.path.join(path, front_fname)
-                fullpath_to_top = os.path.join(path, top_fname)
-            else:
-                # This is a seq file, but doesnt have "Top" or "Front" in it. Let's skip it.
-                continue
+            front_fname, top_fname, mouse_name = mof.get_names(fname, pair_files=False)
+            fullpath_to_top = os.path.join(path, top_fname)
 
             # Add their info to the bento file at the appropriate level.
 

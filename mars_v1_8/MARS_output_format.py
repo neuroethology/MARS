@@ -2,40 +2,47 @@ import os
 import xlwt
 
 
-def get_names(video_name):
-    """Given a video name, returns the name for the front video, top video, and mouse name."""
+def get_supported_formats():
+    return ['.seq', '.avi', '.mpg', '.mp4']
+
+
+def get_names(video_name, pair_files=False):
+    """Given a video name:
+        If pair_files=False, it just returns the video name for top_name and mouse_name.
+        If pair_file=True, returns the name for the front video, top video, and mouse name.
+        To use pair_files=True, movie filenames must contain a camera position (_Top or _Front).
+    """
+    if not pair_files:  # if we don't need to match up cameras, don't impose any naming restrictions on videos
+        if any(x in video_name for x in get_supported_formats()):
+            return video_name, video_name, video_name
+        else:
+            return '', '', ''
+
+    # this is legacy code to support various ways we distinguished Top vs Front-view video during development.
     if ('Top_J85.seq' in video_name):
         mouse_name = video_name[:-12]
-    elif ('Top.seq' in video_name):
-        mouse_name = video_name[:-8]
-    elif ('_s.seq' in video_name):
-        mouse_name = video_name[:-6]
     elif ('_t.seq' in video_name):
         mouse_name = video_name[:-6]
     elif ('_Top.' in video_name):
         mouse_name = os.path.splitext(video_name)[0]
-        mouse_name = mouse_name.replace('_Top','')
+        mouse_name = mouse_name.replace('_Top', '')
+
     elif ('Front_J85.seq' in video_name):
         mouse_name = video_name[:-14]
-    elif ('Front.seq' in video_name):
-        mouse_name = video_name[:-10]
+    elif ('_s.seq' in video_name):
+        mouse_name = video_name[:-6]
+    elif ('_Front.' in video_name):
+        mouse_name = os.path.splitext(video_name)[0]
+        mouse_name = mouse_name.replace('_Front', '')
     elif ('FroHi.seq' in video_name):
         mouse_name = video_name[:-10]
-    else: return '','',''
+
+    else: return '', '', ''  # couldn't find any indication of camera position in the filename- skip!
 
     # Find the ending suffix for each video.
     if 'J85' in video_name:
         top_ending = '_Top_J85.seq'
         front_ending = '_Front_J85.seq'
-    # elif 'avi' in video_name:
-    #     top_ending='_Top.avi'
-    #     front_ending=''
-    # elif 'mpg' in video_name:
-    #     top_ending='_Top.mpg'
-    #     front_ending=''
-    # elif 'mp4' in video_name:
-    #     top_ending='_Top.mp4'
-    #     front_ending=''
     elif any(x in video_name for x in ['_s.seq','_t.seq']):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
@@ -43,7 +50,6 @@ def get_names(video_name):
         ext = os.path.splitext(video_name)[1]
         top_ending = '_Top'+ext
         front_ending = '_Front'+ext
-
     
     top_name = mouse_name + top_ending
     front_name = mouse_name + front_ending
@@ -107,10 +113,10 @@ def get_feat_no_ext(video_fullpath, output_folder, view, output_suffix=''):
 
     video_path = os.path.dirname(video_fullpath)
     video_name = os.path.basename(video_fullpath)
-    video_front_name, video_top_name,mouse_name = get_names(video_name)
+    video_front_name, video_top_name, mouse_name = get_names(video_name)
 
     # # Generates the name of the output directory
-    output_plus_mouse = os.path.join(output_folder,mouse_name)
+    output_plus_mouse = os.path.join(output_folder, mouse_name)
 
     # Puts it in pose_(view)_(suffix) format
     feat_designator = '_'.join(['raw_feat', view, output_suffix])
@@ -227,7 +233,7 @@ def dump_bento_across_dir(root_path):
 
     for fname in nonaudio_filenames:
         try:
-            cond1 = all(x not in fname for x in ['.seq','.avi','.mpg','.mp4'])
+            cond1 = all(x not in fname for x in get_supported_formats())
             cond2 = 'skipped' in path
 
             if (cond1) | cond2:

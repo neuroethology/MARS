@@ -30,38 +30,27 @@ def walk_current_folder(root_path, mars_opts):
     for path, subdirs, filenames in os.walk(root_path):
         for numv, fname in enumerate(filenames):
 
-            # start by looping over all movie files that have "Top" in their name
-            cond1 = all(x not in fname for x in ['.seq', '.avi', '.mpg', '.mp4'])
-            cond2 = 'skipped' in path
-            cond3 = 'Top' not in fname and '_t.seq' not in fname
-            if cond1 | cond2 | cond3:
+            # start by looping over all movie files
+            isVideo = any(x in fname for x in mof.get_supported_formats())
+            if not isVideo:
                 continue
 
-            if 'Top' in fname or '_t.seq' in fname:
-                front_fname, top_fname, mouse_name = mof.get_names(fname)
-                if top_fname != fname: continue
-                fullpath_to_front = os.path.join(path, front_fname)
+            if mars_opts['doTop'] and not mars_opts['doFront']:
+                front_fname, top_fname, mouse_name = mof.get_names(fname, pair_files=False)
                 fullpath_to_top = os.path.join(path, top_fname)
-                cond1 = not (os.path.exists(fullpath_to_front))
-                cond2 = mars_opts['doFront']
-                cond3 = not mars_opts['doTop']
-                cond4 = not mars_opts['doToppcf']
-                # If the front video doesn't exist and we need it, continue.
-                if (cond1 and cond2):  # |(cond3 and cond4):
-                    continue
-            elif 'Front' in fname:
-                front_fname = fname
-                front_fname, top_fname, mouse_name = mof.get_names(front_fname)
-                # if front_fname != fname: continue
-                fullpath_to_top = os.path.join(path, top_fname)
-                fullpath_to_front = os.path.join(path, front_fname)
-                cond1 = not (os.path.exists(fullpath_to_top))
-                cond2 = mars_opts['doTop']
-                cond3 = not mars_opts['doFront']
-                cond4 = not mars_opts['doToppcf']
+                fullpath_to_front = ''
 
-                if (cond1 and cond2 and cond4) | cond3:
-                    continue
+            elif mars_opts['doFront'] and not mars_opts['doTop']:
+                front_fname, top_fname, mouse_name = mof.get_names(fname, pair_files=False)
+                fullpath_to_top = ''
+                fullpath_to_front = os.path.join(path, front_fname)
+
+            elif mars_opts['doFront'] and mars_opts['doTop']:
+                front_fname, top_fname, mouse_name = mof.get_names(fname, pair_files=True)
+                if top_fname != fname: continue  # only make one entry per top-front pair
+                fullpath_to_top = os.path.join(path, top_fname)
+                fullpath_to_front = os.path.join(path, front_fname)
+
             else:
                 # This is a movie file, but doesnt have "Top" or "Front" in it. Let's skip it.
                 continue
@@ -136,7 +125,6 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                 send_update('Processing ' + top_fname + cumulative_progress + '\n', output_mode, gui_handle)
 
                 if mars_opts['doPose']:
-
                     if mars_opts['doFront']:
                         send_update("   Extracting front pose from " + front_fname + " ... ", output_mode, gui_handle)
                         mpe.extract_pose_wrapper(video_fullpath=fullpath_to_front,
@@ -147,8 +135,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                                                  verbose=mars_opts['verbose'],
                                                  max_frames=mars_opts['max_frames'])
                         send_update("saved.\n", output_mode, gui_handle)
-
-                    if mars_opts['doTop'] or mars_opts['doToppcf']:
+                    if mars_opts['doTop']:
                         send_update("   Extracting top pose from " + top_fname + " ... ", output_mode, gui_handle)
                         mpe.extract_pose_wrapper(video_fullpath=fullpath_to_top,
                                                  view='top',
@@ -159,82 +146,32 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                                                  max_frames=mars_opts['max_frames'])
                         send_update('saved.\n', output_mode, gui_handle)
 
-                    if not (mars_opts['doFront'] | mars_opts['doTop'] | mars_opts['doToppcf']):
+                    if not (mars_opts['doFront'] | mars_opts['doTop']):
                         view_msg = "ERROR: You need to select at least one view to use."
                         raise ValueError(view_msg)
 
                 if mars_opts['doFeats']:
-                    # If we wanted to do something special with the Front and Top views, we'd do it here.
-                    # if mars_opts['doFront'] and mars_opts['doTop']:
-                    #     print('Extracting features...')
-                    #
-                    #     # Extract the features.
-                    #     mfe.extract_both_features_wrapper(top_video_fullpath = fullpath_to_top,
-                    #                                     front_video_fullpath = fullpath_to_front,
-                    #                                     doOverwrite = mars_opts['doOverwrite'],
-                    #                                     output_suffix='')
-                    if mars_opts['doTop']:
-                        send_update('   Extracting top features from ' + top_fname + ' ... ', output_mode, gui_handle)
-                        mfe.extract_top_features_wrapper(top_video_fullpath=fullpath_to_top,
-                                                         doOverwrite=mars_opts['doOverwrite'],
-                                                         progress_bar_sig=gui_handle.update_progbar_sig,
-                                                         output_suffix='',
-                                                         max_frames=mars_opts['max_frames'])
-                        send_update('saved.\n', output_mode, gui_handle)
-                        if output_mode == 'gui': gui_handle.update_th.emit(2)
-
-                   # if mars_opts['doToppcf']:
-                   #     send_update('   Extracting top pcf features from ' + top_fname + ' ... ', output_mode, gui_handle)
-                   #     mfe.extract_top_pcf_features_wrapper(top_video_fullpath=fullpath_to_top,
-                   #                                          front_video_fullpath=fullpath_to_front,
-                   #                                          doOverwrite=mars_opts['doOverwrite'],
-                   #                                          progress_bar_sig=gui_handle.update_progbar_sig,
-                   #                                          output_suffix='',
-                   #                                          max_frames=mars_opts['max_frames'])
-                   #     send_update('saved.\n', output_mode, gui_handle)
-                   #     if output_mode=='gui': gui_handle.update_th.emit(2)
-
-                    if mars_opts['doFront']:
-                        send_update('   Extracting front features from ' + front_fname + ' ... ', output_mode, gui_handle)
-                        mfe.extract_front_features_wrapper(top_video_fullpath=fullpath_to_top,
-                                                           front_video_fullpath=fullpath_to_front,
-                                                           doOverwrite=mars_opts['doOverwrite'],
-                                                           progress_bar_sig=gui_handle.update_progbar_sig,
-                                                           output_suffix='',
-                                                           max_frames=mars_opts['max_frames'])
-                        send_update('saved.\n', output_mode, gui_handle)
-                        if output_mode == 'gui': gui_handle.update_th.emit(2)
-
-                    if not (mars_opts['doTop'] | mars_opts['doToppcf']):
-                        view_msg('Warning: You need to include a top view to use the classifier later.')
-                        raise Warning(view_msg)
+                    send_update('   Extracting features from ' + top_fname + ' ... ', output_mode, gui_handle)
+                    mfe.extract_features_wrapper(top_video_fullpath=fullpath_to_top,
+                                                 doOverwrite=mars_opts['doOverwrite'],
+                                                 progress_bar_sig=gui_handle.update_progbar_sig,
+                                                 output_suffix='',
+                                                 max_frames=mars_opts['max_frames'],
+                                                 opts=mars_opts)
+                    send_update('saved.\n', output_mode, gui_handle)
+                    if output_mode == 'gui': gui_handle.update_th.emit(2)
 
                 if mars_opts['doActions']:
-                    # if mars_opts['doToppcf']:
-                    #     send_update('   Predicting actions using Toppcf from ' + top_fname + ' ... ', output_mode, gui_handle)
-                    #     # TODO: Don't hardcode this maybe?
-                    #    classifier_type = 'top_pcf_tm_xgb500_wnd'
-                    #
-                    #    mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
-                    #                                  front_video_fullpath='',
-                    #                                  doOverwrite=mars_opts['doOverwrite'],
-                    #                                  view='toppcf',
-                    #                                  classifier_path='models/classifier/' + classifier_type)
-                    #     send_update('saved.\n', output_mode, gui_handle)
-                    #     if output_mode == 'gui': gui_handle.update_th.emit(3)
+                    send_update('   Predicting actions from ' + top_fname + ' ... ', output_mode, gui_handle)
+                    classifier_path = mars_opts['classifier_model']
 
-                    if mars_opts['doTop']:
-                        send_update('   Predicting actions from ' + top_fname + ' ... ', output_mode, gui_handle)
-                        # TODO: Don't hardcode this maybe?
-                        classifier_type = 'top_tm_xgb500_wnd'
-
-                        mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
-                                                     front_video_fullpath='',
-                                                     doOverwrite=mars_opts['doOverwrite'],
-                                                     view='top',
-                                                     classifier_path=classifier_path)
-                        send_update('saved.\n', output_mode, gui_handle)
-                        if output_mode == 'gui': gui_handle.update_th.emit(3)
+                    mce.classify_actions_wrapper(top_video_fullpath=fullpath_to_top,
+                                                 front_video_fullpath='',
+                                                 doOverwrite=mars_opts['doOverwrite'],
+                                                 view='top',
+                                                 classifier_path=classifier_path)
+                    send_update('saved.\n', output_mode, gui_handle)
+                    if output_mode == 'gui': gui_handle.update_th.emit(3)
 
                     if not mars_opts['doTop'] and not mars_opts['doToppcf']:
                         msg = "ERROR: You need to select a top view to use classifiers."
@@ -243,12 +180,12 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                     mcm.dump_bento(video_fullpath=fullpath_to_top, basepath=root_path)
 
                 if mars_opts['doVideo']:
-                    if not (mars_opts['doFront'] | mars_opts['doTop'] | mars_opts['doToppcf']):
+                    if not (mars_opts['doFront'] | mars_opts['doTop']):
                         msg = "ERROR: You need to select a view."
                         raise ValueError(msg)
                     else:
                         # TODO: Do we want to keep the top-pcf option?
-                        classifier_path = mars_opts['classifier_pcf_model'] if mars_opts['doToppcf'] else mars_opts['classifier_model']
+                        classifier_path = mars_opts['classifier_model']
 
                         send_update('   Creating results video for ' + top_fname + '...', output_mode, gui_handle)
                         mcv.create_video_results_wrapper(top_video_fullpath=fullpath_to_top,
