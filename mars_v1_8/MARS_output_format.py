@@ -120,7 +120,7 @@ def get_most_recent(models, behavior):
     return model_name
 
 
-def get_feat_no_ext(opts, video_fullpath=video_fullpath, output_folder=output_folder, output_suffix=output_suffix):
+def get_feat_no_ext(opts, video_fullpath='', output_folder='', output_suffix=''):
     # (video_fullpath, output_folder, view, output_suffix=''):
     """Gives the name of the feature file that should be in a given directory, without the extension on the end."""
     if not output_suffix:
