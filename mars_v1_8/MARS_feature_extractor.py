@@ -3290,19 +3290,20 @@ def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_s
                 feature_type = feat_basename.split('_feat')[0]
                 feature_view = feat_basename.split('feat_')[0].split('_')[0]  # top, front, or both- not currently used.
 
-                model_name = get_most_recent(clf_models, behavior)
+                model_name = mof.get_most_recent(clf_models, behavior)
                 clf = joblib.load(os.path.join(classifier_path, model_name))
                 opts['classifier_features'] = clf['params']  # pass along the settings for this classifier
-                cfg = clf['params']['project_config']  # unpack the MARS_developer parent project config
-                num_mice = len(cfg['animal_names']) * cfg['num_obj']
 
                 if feature_type == 'custom':
+                    cfg = clf['params']['project_config']  # unpack the MARS_developer parent project config
+                    num_mice = len(cfg['animal_names']) * cfg['num_obj']
                     feat = run_feature_extraction(top_pose_fullpath=top_pose_fullpath,
                                                   opts=opts,
                                                   progress_bar_sig=progress_bar_sig,
                                                   max_frames=max_frames)
 
                 elif feature_type == 'raw_pcf':
+                    num_mice = 2
                     feat = classic_extract_features_top_pcf(top_video_fullpath=video_fullpath,
                                                             front_video_fullpath=front_video_fullpath,
                                                             top_pose_fullpath=top_pose_fullpath,
@@ -3310,6 +3311,7 @@ def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_s
                                                             max_frames=max_frames)
 
                 elif feature_type == 'raw':
+                    num_mice = 2
                     feat = classic_extract_features_top(top_video_fullpath=video_fullpath,
                                                         top_pose_fullpath=top_pose_fullpath,
                                                         progress_bar_sig=progress_bar_sig,
@@ -3318,7 +3320,7 @@ def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_s
                     raise ValueError("feature type " + feature_type + "not recognized")
 
                 if not feat:
-                    print('skipping for no feats, something went wrong')
+                    raise ValueError('Feature extraction failed for behavior ' + behavior + ', feature type ' + feature_type)
                 else:
                     np.savez(feat_basename, **feat)
                     sp.savemat(feat_basename + '.mat',  feat)
