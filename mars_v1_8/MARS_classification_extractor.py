@@ -6,12 +6,7 @@ import pdb
 
 
 
-def classify_actions_wrapper(top_video_fullpath,
-                             front_video_fullpath,
-                                doOverwrite,
-                                view,
-                                classifier_path='',
-                                output_suffix=''):
+def classify_actions_wrapper(top_video_fullpath, front_video_fullpath, doOverwrite, view, classifier_path='', output_suffix=''):
     try:
         video_fullpath = top_video_fullpath
         video_path = os.path.dirname(video_fullpath)
@@ -24,70 +19,80 @@ def classify_actions_wrapper(top_video_fullpath,
                                                  output_suffix=output_suffix)
 
         # Get the name of the features you should be loading.
-        front_feat_basename = mof.get_feat_no_ext(video_fullpath=top_video_fullpath,
+        front_feat_dict = mof.get_feat_no_ext(video_fullpath=top_video_fullpath,
                                             output_folder=output_folder,
                                             view='front',
                                             output_suffix=output_suffix)
 
-        top_feat_basename = mof.get_feat_no_ext(video_fullpath=top_video_fullpath,
+        top_feat_dict = mof.get_feat_no_ext(video_fullpath=top_video_fullpath,
                                             output_folder=output_folder,
                                             view='top',
                                             output_suffix=output_suffix)
+
+        behaviors = list(top_feat_dict.keys())
 
         # Get the name of the text file we're going to save to.
         classifier_savename = mof.get_classifier_savename(video_fullpath=top_video_fullpath,
                                             output_folder=output_folder,
                                             view=view,
                                             classifier_path=classifier_path,
-                                            output_suffix=output_suffix,model_type=model_type)
+                                            output_suffix=output_suffix,
+                                            model_type=model_type)
 
-        # Make their matfile names.
-        if 'pcf' in classifier_path:
-            # more hiding pcf features shenanigans, hopefully the last time?
-            # top_feat_basename = top_feat_basename[:-4] + 'pcf_'+top_feat_basename[-4:]
-            front_feat_name = front_feat_basename + '_wnd.npz'
-            top_feat_name = top_feat_basename + '_wnd.npz'
-        else:
-            front_feat_name = front_feat_basename + '_wnd.npz'
-            top_feat_name = top_feat_basename + '_wnd.npz'
+        # Make sure that the features exist:
+        clf_models = [filename for filename in os.listdir(classifier_path)]
+        top_feats_exist = []
+        top_feat_names = {}
+        front_feats_exist = []
+        front_feat_names = {}
+        for behavior in top_feat_dict.keys():
+            model_name = mof.get_most_recent(clf_models, behavior)
+            clf = joblib.load(os.path.join(classifier_path, model_name))
+            top_feat_basename = top_feat_dict[behavior]
+            if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:
+                top_feat_name = top_feat_basename + '_wnd.npz'
+            else:
+                top_feat_name = top_feat_basename + '.npz'
+            top_feats_exist.append(os.path.exists(top_feat_name))
+            if top_feat_exist[-1]:
+                top_feat_names.update({behavior: top_feat_name})
 
-        # Check that features exist.
-        top_feats_exist = os.path.exists(top_feat_name)
-        front_feats_exist = os.path.exists(front_feat_name)
+        for behavior in front_feat_dict.keys():
+            model_name = mof.get_most_recent(clf_models, behavior)
+            clf = joblib.load(os.path.join(classifier_path, model_name))
+            front_feat_basename = front_feat_dict[behavior]
+            if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:
+                front_feat_name = front_feat_basename + '_wnd.npz'
+            else:
+                front_feat_name = front_feat_basename + '.npz'
+            front_feats_exist.append(os.path.exists(front_feat_name))
+            if front_feats_exist[-1]:
+                front_feat_names.update({behavior: front_feat_name})
+
         classifier_savename_exist = os.path.exists(classifier_savename)
-        # if False:
+        # if we haven't done classification before, or if we're overwriting:
         if (not classifier_savename_exist) | doOverwrite:
-
             # If the proper features don't exist, raise an exception. Otherwise, load them.
             if (view == 'top') or (view == 'toppcf'):
-                if top_feats_exist:
-                    print("loading top features")
-                    features = mcm.load_features_from_filename(top_feat_name=top_feat_name)
-                else:
-                    print("Top features don't exist in the proper format/location. Aborting...")
-                    raise ValueError(top_feat_name.split('/')[-1] + " doesn't exist.")
-
+                if not any(top_feats_exist):
+                    raise ValueError("Top features don't exist in the proper format/location.")
             elif view == 'topfront':
-                if not top_feats_exist:
-                    print("Top features don't exist in the proper format/location. Aborting...")
-                    raise ValueError(top_feat_name.split('/')[-1] + " doesn't exist.")
-                elif not front_feats_exist:
-                    print("Front features don't exist in the proper format/location. Aborting...")
-                    raise ValueError(front_feat_name.split('/')[-1] + " doesn't exist.")
-                else: # Both featuresets exist.
-                    print("loading top and front features")
-                    features = mcm.load_features_from_filename(top_feat_name=top_feat_name,
-                                                 front_feat_name=front_feat_name)
+                if not any(top_feats_exist):
+                    raise ValueError("Top features don't exist in the proper format/location.")
+                elif not any(front_feats_exist):
+                    raise ValueError("Front features don't exist in the proper format/location.")
             else:
-                print("Classifier available for top or top and front view")
-                raise ValueError('Classifier not available for only fron view')
+                raise ValueError('Classifier not available for specified view')
             
             # Classify the actions (get the labels back).
             print("predicting labels")
-            predicted_labels,predicted_labels_interaction = mcm.predict_labels(features, classifier_path)
+            predicted_labels, predicted_labels_interaction = mcm.predict_labels(classifier_path,
+                                                                                top_feat_names=top_feat_names,
+                                                                                front_feat_names=front_feat_names,
+                                                                                behaviors=behaviors)
 
             # Dump the labels into the Caltech Behavior Annotator format.
-            mcm.dump_labels_CBA(predicted_labels,predicted_labels_interaction, classifier_savename)
+            mcm.dump_labels_CBA(predicted_labels, predicted_labels_interaction, classifier_savename)
         else:
             print("3 - Predictions already exist")
             return

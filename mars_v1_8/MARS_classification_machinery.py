@@ -31,9 +31,14 @@ def clean_data(data):
     return data
 
 def normalize_pixel_data(data,view):
-    if view=='top':fd = [range(40, 49)]
-    elif view=='front': fd=[range(47,67)]
-    elif view =='top_pcf':fd=[range(40,57)]
+    if view == 'top':
+        fd = [range(40, 49)]
+    elif view == 'front':
+        fd = [range(47,67)]
+    elif view == 'top_pcf':
+        fd = [range(40,57)]
+    else:
+        return data
     fd = list(flatten(fd))
     md = np.nanmedian(data[:, :, fd], 1, keepdims=True)
     data[:, :, fd] /= md
@@ -176,29 +181,27 @@ def load_features_both_wnd(top_feat_name, front_feat_name):
     return features
 
 
-def predict_labels(features, classifier_path, behaviors=[]):
+def predict_labels(classifier_path, top_feat_names, front_feat_names, behaviors):
     print("predicting probabilities")
-    all_predicted_probabilities, behaviors_used = predict_probabilities(features=features,
-                                                                        classifier_path=classifier_path,
+    all_predicted_probabilities, behaviors_used = predict_probabilities(classifier_path=classifier_path,
+                                                                        top_feat_names=top_feat_names,
+                                                                        front_feat_names=front_feat_names,
                                                                         behaviors=behaviors)
     print("assigning labels")
-    labels,labels_iteraction = assign_labels(all_predicted_probabilities=all_predicted_probabilities,
+    labels, labels_iteraction = assign_labels(all_predicted_probabilities=all_predicted_probabilities,
                            behaviors_used=behaviors_used)
-    return labels,labels_iteraction
+    return labels, labels_iteraction
 
-def predict_probabilities(features, classifier_path, behaviors=[], VERBOSE = True):
-        ''' This predicts behavior labels on a video, given a classifier and features.'''
+
+def predict_probabilities(classifier_path, top_feat_names, front_feat_names=[], behaviors=[], VERBOSE=True):
+        ''' This predicts behavior labels on a video, given a classifier and feature files.'''
+
         if not behaviors:
-            behaviors = ['closeinvestigation','mount', 'attack']
-
-
-        # scaler = joblib.load(classifier_path + '/scaler')
-        # # Scale the data appropriately.
-        # print("transforming features")
-        # X_test = scaler.transform(features)
+            behaviors = top_feat_names.keys()
 
         models = [os.path.join(classifier_path, filename) for filename in os.listdir(classifier_path)]
         behaviors_used = []
+        active_featname = ''
 
         preds_fbs_hmm = []
         proba_fbs_hmm = []
@@ -207,32 +210,31 @@ def predict_probabilities(features, classifier_path, behaviors=[], VERBOSE = Tru
             # For each behavior, load the model, load in the data (if needed), and predict on it.
             print('############################## %s #########################' % behavior)
 
-            # Get all the models that model the given behavior.
-            models_with_this_behavior = filter(lambda x: x.find('classifier_' + behavior + '.pkl') > -1, models)
-            # pdb.set_trace()
-            # If there are models for this behavior, load the most recently trained one.
-            if models_with_this_behavior:
-                # create a dict that contains list of files and their modification timestamps
-                name_n_timestamp = dict([(x, os.stat(x).st_mtime) for x in models_with_this_behavior])
-                # return the file with the latest timestamp
-                name_classifier = max(name_n_timestamp, key=lambda k: name_n_timestamp.get(k))
+            # Get the most recent classifier for this behavior
+            name_classifier = mof.get_most_recent(models, behavior)
 
-                classifier = joblib.load(name_classifier)
+            classifier = joblib.load(name_classifier)
 
-                scaler = classifier['scaler']
-                bag_clf = classifier['bag_clf']  if 'bag_clf' in classifier.keys() else classifier['clf']
-                hmm_fbs = classifier['hmm_fbs']
-                kn = classifier['params']['smk_kn']
-                blur_steps = classifier['params']['blur']
-                shift = classifier['params']['shift']
+            scaler = classifier['scaler']
+            bag_clf = classifier['bag_clf'] if 'bag_clf' in classifier.keys() else classifier['clf']
+            hmm_fbs = classifier['hmm_fbs']
+            kn = classifier['params']['smk_kn']
+            blur_steps = classifier['params']['blur']
+            shift = classifier['params']['shift']
 
-                # Keep track of which behaviors get used.
-                behaviors_used += [behavior]
+            if 'top' in classifier['params']['feat_type']:
+                if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
+                    features = load_features_from_filename(top_feat_name=top_feat_name[behavior])
+                    active_featname = top_feat_names[behavior]
+            elif classifier['params']['feat_type'] == 'topfront':
+                if active_featname != top_feat_names[behavior]:
+                    features = mcm.load_features_from_filename(top_feat_name=top_feat_names[behavior],
+                                                               front_feat_name=front_feat_names[behavior])
+                    active_featname = top_feat_names[behavior]
 
-            else:
-                print('Classifier not found, you need to train a classifier for this behavior before using it')
-                print('Classification will continue without classifying this behavior')
-                continue
+
+            # Keep track of which behaviors get used.
+            behaviors_used += [behavior]
 
             # apply the scaler.
             if VERBOSE:
