@@ -704,7 +704,14 @@ def classic_extract_features_top(top_video_fullpath,top_pose_fullpath, progress_
             #################################################################  position features
 
             # fit ellipse
-            cx1, cy1, ra1, rb1, alpha1, _, _, _, _ = fit_ellipse(xm1, ym1)
+            # ell = {'cx': cx, 'cy': cy, 'ra': a, 'rb': b, 'phi': phi,
+            #        'xs': xs, 'ys': ys, 'ori_vec_v': ori_vec_v, 'ori_vec_h': ori_vec_h}
+            ell = fit_ellipse(xm1, ym1)
+            cx1 = ell['cx']
+            cy1 = ell['cy']
+            ra1 = ell['ra']
+            rb1 = ell['rb']
+            alpha1 = ell['phi']
             ind = features.index('centroid_x')
             track['data'][0, f, ind] = cx1  # 'centroid_x'
             ind = features.index('centroid_y')
@@ -720,7 +727,12 @@ def classic_extract_features_top(top_video_fullpath,top_pose_fullpath, progress_
             ind = features.index('area_ellipse')
             track['data'][0, f, ind] = mh.pi * ra1 * rb1 if ra1 * rb1 > 0. else eps  # 'area_ellipse'
 
-            cx2, cy2, ra2, rb2, alpha2, _, _, _, _ = fit_ellipse(xm2, ym2)
+            ell = fit_ellipse(xm2, ym2)
+            cx2 = ell['cx']
+            cy2 = ell['cy']
+            ra2 = ell['ra']
+            rb2 = ell['rb']
+            alpha2 = ell['phi']
             ind = features.index('centroid_x')
             track['data'][1, f, ind] = cx2  # 'centroid_x'
             ind = features.index('centroid_y')
@@ -2035,7 +2047,12 @@ def classic_extract_features_top_pcf(top_video_fullpath, front_video_fullpath, t
             #################################################################  position features
 
             # fit ellipse
-            cx1, cy1, ra1, rb1, alpha1, _, _, _, _ = fit_ellipse(xm1, ym1)
+            ell = fit_ellipse(xm1, ym1)
+            cx1 = ell['cx']
+            cy1 = ell['cy']
+            ra1 = ell['ra']
+            rb1 = ell['rb']
+            alpha1 = ell['phi']
             ind = features.index('centroid_x')
             track['data'][0, f, ind] = cx1  # 'centroid_x'
             ind = features.index('centroid_y')
@@ -2051,7 +2068,12 @@ def classic_extract_features_top_pcf(top_video_fullpath, front_video_fullpath, t
             ind = features.index('area_ellipse')
             track['data'][0, f, ind] = mh.pi * ra1 * rb1 if ra1 * rb1 > 0. else eps  # 'area_ellipse'
 
-            cx2, cy2, ra2, rb2, alpha2, _, _, _, _ = fit_ellipse(xm2, ym2)
+            ell = fit_ellipse(xm2, ym2)
+            cx2 = ell['cx']
+            cy2 = ell['cy']
+            ra2 = ell['ra']
+            rb2 = ell['rb']
+            alpha2 = ell['phi']
             ind = features.index('centroid_x')
             track['data'][1, f, ind] = cx2  # 'centroid_x'
             ind = features.index('centroid_y')
