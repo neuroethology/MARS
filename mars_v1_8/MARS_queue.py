@@ -223,6 +223,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                     #     send_update('saved.\n', output_mode, gui_handle)
                     #     if output_mode == 'gui': gui_handle.update_th.emit(3)
 
+                    classifier_path = mars_opts['classifier_model'] if mars_opts['doToppcf'] else mars_opts['classifier_model']
                     if mars_opts['doTop']:
                         send_update('   Predicting actions from ' + top_fname + ' ... ', output_mode, gui_handle)
                         # TODO: Don't hardcode this maybe?
