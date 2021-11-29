@@ -1,12 +1,12 @@
 import MARS_classification_machinery as mcm
 import MARS_output_format as mof
 import os
-import pdb
+import joblib
 
 
 
 
-def classify_actions_wrapper(top_video_fullpath, front_video_fullpath, doOverwrite, view, classifier_path='', output_suffix=''):
+def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doOverwrite, view, classifier_path='', output_suffix=''):
     try:
         video_fullpath = top_video_fullpath
         video_path = os.path.dirname(video_fullpath)
@@ -19,12 +19,14 @@ def classify_actions_wrapper(top_video_fullpath, front_video_fullpath, doOverwri
                                                  output_suffix=output_suffix)
 
         # Get the name of the features you should be loading.
-        front_feat_dict = mof.get_feat_no_ext(video_fullpath=top_video_fullpath,
-                                            output_folder=output_folder,
-                                            view='front',
-                                            output_suffix=output_suffix)
+        front_feat_dict = mof.get_feat_no_ext(opts,
+                                              video_fullpath=top_video_fullpath,
+                                              output_folder=output_folder,
+                                              view='front',
+                                              output_suffix=output_suffix)
 
-        top_feat_dict = mof.get_feat_no_ext(video_fullpath=top_video_fullpath,
+        top_feat_dict = mof.get_feat_no_ext(opts,
+                                            video_fullpath=top_video_fullpath,
                                             output_folder=output_folder,
                                             view='top',
                                             output_suffix=output_suffix)
@@ -40,13 +42,13 @@ def classify_actions_wrapper(top_video_fullpath, front_video_fullpath, doOverwri
                                             model_type=model_type)
 
         # Make sure that the features exist:
-        clf_models = [filename for filename in os.listdir(classifier_path)]
+        clf_models = mof.get_classifier_list(classifier_path)
         top_feats_exist = []
         top_feat_names = {}
         front_feats_exist = []
         front_feat_names = {}
         for behavior in top_feat_dict.keys():
-            model_name = mof.get_most_recent(clf_models, behavior)
+            model_name = mof.get_most_recent(classifier_path, clf_models, behavior)
             clf = joblib.load(os.path.join(classifier_path, model_name))
             top_feat_basename = top_feat_dict[behavior]
             if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:
@@ -54,11 +56,11 @@ def classify_actions_wrapper(top_video_fullpath, front_video_fullpath, doOverwri
             else:
                 top_feat_name = top_feat_basename + '.npz'
             top_feats_exist.append(os.path.exists(top_feat_name))
-            if top_feat_exist[-1]:
+            if top_feats_exist[-1]:
                 top_feat_names.update({behavior: top_feat_name})
 
         for behavior in front_feat_dict.keys():
-            model_name = mof.get_most_recent(clf_models, behavior)
+            model_name = mof.get_most_recent(classifier_path, clf_models, behavior)
             clf = joblib.load(os.path.join(classifier_path, model_name))
             front_feat_basename = front_feat_dict[behavior]
             if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:

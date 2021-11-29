@@ -1,7 +1,6 @@
 from __future__ import print_function,division
 import numpy as np
 import scipy.io as sp
-import json
 import os
 import sys
 import dill
@@ -18,11 +17,14 @@ import json
 import cmath as cmh
 import scipy.io as sio
 import numpy.core.records as npc
+import joblib
+import yaml
 warnings.filterwarnings('ignore')
 sys.path.append('./')
 from util.genericVideo import *
 from MARS_feature_machinery import *
 import MARS_output_format as mof
+
 
 flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, Iterable) else (a,)))
 
@@ -249,7 +251,8 @@ def get_mars_keypoints(keypoints, num_mice, partorder):
 
 
 def run_feature_extraction(top_pose_fullpath, opts, front_video_fullpath='',
-                           smooth_keypoints=False, center_mouse=False, progress_bar_sig=[], max_frames=-1):
+                           smooth_keypoints=False, center_mouse=False, progress_bar_sig=[],
+                           mouse_list=[], use_grps=[], use_cam='top', max_frames=-1):
 
     # TODO: this function has a couple optional flags that aren't yet accessible to users:
     # smooth_keypoints - smooth keypoint trajectories before feature extraction (code not actually in place yet)
@@ -259,8 +262,8 @@ def run_feature_extraction(top_pose_fullpath, opts, front_video_fullpath='',
     keypoints = [f for f in frames_pose['keypoints']]
 
     # TODO: add option to smooth keypoint trajectories before feature extraction
-    if smooth_keypoints:
-        keypoints = smooth_keypoint_trajectories(keypoints)
+    # if smooth_keypoints:
+        # keypoints = smooth_keypoint_trajectories(keypoints)
 
     dscale = opts['pixels_per_cm']
     fps = opts['framerate']
@@ -316,7 +319,7 @@ def run_feature_extraction(top_pose_fullpath, opts, front_video_fullpath='',
         allx = []
         ally = []
         for f in range(num_frames):
-            keypoints = sequence['keypoints'][f]
+            keypoints = frames_pose['keypoints'][f]
             xm, ym = get_mars_keypoints(keypoints, num_mice, partorder)
 
             [allx.append(x) for x in np.ravel(xm)]
@@ -352,12 +355,12 @@ def run_feature_extraction(top_pose_fullpath, opts, front_video_fullpath='',
                     xm0[m] = xm[m]
                     ym0[m] = ym[m]
 
-            keypoints = sequence['keypoints'][f]
+            keypoints = frames_pose['keypoints'][f]
             xm, ym = get_mars_keypoints(keypoints, num_mice, partorder)
 
             bboxes = []
             for m in range(num_mice):
-                bboxes.append(np.asarray(sequence['bbox'][f])[0, :])
+                bboxes.append(np.asarray(frames_pose['bbox'][f])[0, :])
             if f == 0:
                 for m in range(num_mice):
                     xm0[m] = xm[m]
@@ -3267,7 +3270,7 @@ def compute_windows_features(features, view, featToKeep, windows=[3, 11, 21], nu
     return features_wnd
 
 
-def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_suffix='', front_video_fullpath=''):
+def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_suffix='', front_video_fullpath=''):
 
     doOverwrite = opts['doOverwrite']
     max_frames = opts['max_frames']
@@ -3275,22 +3278,23 @@ def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_s
     video_name = os.path.basename(video_fullpath)
     output_folder = mof.get_mouse_output_dir(dir_output_should_be_in=video_path, video_name=video_name, output_suffix=output_suffix)
 
+    feature_view = 'top' if opts['hasTopCamera'] and opts['hasFrontCamera'] else 'top' if opts['hasTopCamera'] else 'front' if opts['hasFrontCamera'] else ''
+
     pose_basename = mof.get_pose_no_ext(video_fullpath=video_fullpath, output_folder=output_folder, view='top', output_suffix=output_suffix)
-    feat_basename_dict = mof.get_feat_no_ext(opts, video_fullpath=video_fullpath, output_folder=output_folder, output_suffix=output_suffix)
-    clf_models = [filename for filename in os.listdir(opts['classifier_model'])]
+    feat_basename_dict = mof.get_feat_no_ext(opts, video_fullpath=video_fullpath, view=feature_view, output_folder=output_folder, output_suffix=output_suffix)
+    clf_models = mof.get_classifier_list(opts['classifier_model'])
     top_pose_fullpath = pose_basename + '.json'
     try:
         if not os.path.exists(top_pose_fullpath):
             raise ValueError("No pose has been extracted for this video!")
 
         for behavior in feat_basename_dict.keys():
-            feat_basename = feat_basename_dict[behavior]
+            feat_basename = feat_basename_dict[behavior]['path']
             if (not os.path.exists(feat_basename + '.npz')) | doOverwrite:
                 t = time.time()
-                feature_type = feat_basename.split('_feat')[0]
-                feature_view = feat_basename.split('feat_')[0].split('_')[0]  # top, front, or both- not currently used.
+                feature_type = feat_basename_dict[behavior]['feature_type']
 
-                model_name = mof.get_most_recent(clf_models, behavior)
+                model_name = mof.get_most_recent(opts['classifier_model'], clf_models, behavior)
                 clf = joblib.load(os.path.join(opts['classifier_model'], model_name))
                 opts['classifier_features'] = clf['params']  # pass along the settings for this classifier
 
@@ -3325,7 +3329,7 @@ def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_s
                     np.savez(feat_basename, **feat)
                     sp.savemat(feat_basename + '.mat',  feat)
 
-                    n_feat = features['data_smooth'].shape[2]
+                    n_feat = feat['data_smooth'].shape[2]
                     if feature_type == 'custom':
                         featToKeep = tuple(flatten([range(n_feat)]))
                         windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in clf['params']['windows']]

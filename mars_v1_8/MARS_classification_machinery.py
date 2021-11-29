@@ -199,7 +199,7 @@ def predict_probabilities(classifier_path, top_feat_names, front_feat_names=[], 
         if not behaviors:
             behaviors = top_feat_names.keys()
 
-        models = [os.path.join(classifier_path, filename) for filename in os.listdir(classifier_path)]
+        models = mof.get_classifier_list(classifier_path)
         behaviors_used = []
         active_featname = ''
 
@@ -211,7 +211,7 @@ def predict_probabilities(classifier_path, top_feat_names, front_feat_names=[], 
             print('############################## %s #########################' % behavior)
 
             # Get the most recent classifier for this behavior
-            name_classifier = mof.get_most_recent(models, behavior)
+            name_classifier = mof.get_most_recent(classifier_path, models, behavior)
 
             classifier = joblib.load(name_classifier)
 

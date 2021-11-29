@@ -1,5 +1,7 @@
 import os
 import xlwt
+import joblib
+import pdb
 
 
 def get_supported_formats():
@@ -14,7 +16,12 @@ def get_names(video_name, pair_files=False):
     """
     if not pair_files:  # if we don't need to match up cameras, don't impose any naming restrictions on videos
         if any(x in video_name for x in get_supported_formats()):
-            return video_name, video_name, video_name
+            mouse_name = os.path.splitext(video_name)[0]
+            if mouse_name.endswith('_Top'):
+                mouse_name = mouse_name[:-4]
+            if mouse_name.endswith('_Front'):
+                mouse_name = mouse_name[:-6]
+            return video_name, video_name, mouse_name
         else:
             return '', '', ''
 
@@ -106,12 +113,18 @@ def get_pose_no_ext(video_fullpath, output_folder, view, output_suffix):
     return pose_basename
 
 
-def get_most_recent(models, behavior):
+def get_classifier_list(directory):
+    clf_list = [os.path.splitext(filename)[0] for filename in os.listdir(directory)]
+    clf_list = [x for x in clf_list if 'classifier_' in x and '_results' not in x]
+    return clf_list
+
+
+def get_most_recent(directory, models, behavior):
     # Get all the models that predict the given behavior.
-    models_with_this_behavior = filter(lambda x: os.path.splitext(x)[0].endswith('classifier_' + behavior), models)
+    models_with_this_behavior = [x for x in models if x.endswith(behavior)]
     if models_with_this_behavior:
         # Pick the most recently trained model for this behavior.
-        name_n_timestamp = dict([(x, os.stat(x).st_mtime) for x in models_with_this_behavior])
+        name_n_timestamp = dict([(x, os.stat(os.path.join(directory,x)).st_mtime) for x in models_with_this_behavior])
 
         model_name = max(name_n_timestamp, key=lambda k: name_n_timestamp.get(k))
     else:
@@ -120,7 +133,7 @@ def get_most_recent(models, behavior):
     return model_name
 
 
-def get_feat_no_ext(opts, video_fullpath='', output_folder='', output_suffix=''):
+def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', output_suffix=''):
     # (video_fullpath, output_folder, view, output_suffix=''):
     """Gives the name of the feature file that should be in a given directory, without the extension on the end."""
     if not output_suffix:
@@ -130,21 +143,16 @@ def get_feat_no_ext(opts, video_fullpath='', output_folder='', output_suffix='')
     video_name = os.path.basename(video_fullpath)
     video_front_name, video_top_name, mouse_name = get_names(video_name,
                                                              pair_files=opts['hasTopCamera'] and opts['hasFrontCamera'])
-    # TODO: add support for feature extraction from top+front cameras
-    view = 'top' if opts['hasTopCamera'] and opts['hasFrontCamera'] \
-        else 'top' if opts['hasTopCamera'] \
-        else 'front' if opts['hasFrontCamera'] \
-        else 'none'
 
     # Generates the name of the output directory
     output_plus_mouse = os.path.join(output_folder, mouse_name)
 
     feat_basenames = {}
     classifier_path = opts['classifier_model']
-    models = [filename for filename in os.listdir(classifier_path)]
+    models = get_classifier_list(classifier_path)
     for behavior in opts['classify_behaviors']:  # figure out what kind of features we need for each classifier
 
-        model_name = get_most_recent(models, behavior)
+        model_name = get_most_recent(classifier_path,models, behavior)
         clf = joblib.load(os.path.join(classifier_path, model_name))
         if 'project_config' in clf['params'].keys():
             feature_type = 'custom'  # TODO: specify the exact feature set to extract in the classifier(?) config file.
@@ -155,7 +163,8 @@ def get_feat_no_ext(opts, video_fullpath='', output_folder='', output_suffix='')
 
         # Puts it in (type)_(view)_(suffix) format
         feat_designator = '_'.join([feature_type, 'feat', view, output_suffix])
-        feat_basenames.update({behavior: output_plus_mouse + '_' + feat_designator})
+        feat_basenames.update({behavior: {'path': output_plus_mouse + '_' + feat_designator,
+                                          'feature_type': feature_type}})
 
     return feat_basenames
 
