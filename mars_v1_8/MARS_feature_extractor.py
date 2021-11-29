@@ -3291,7 +3291,7 @@ def extract_features_wrapper(video_fullpath, opts, progress_bar_sig='', output_s
                 feature_view = feat_basename.split('feat_')[0].split('_')[0]  # top, front, or both- not currently used.
 
                 model_name = mof.get_most_recent(clf_models, behavior)
-                clf = joblib.load(os.path.join(classifier_path, model_name))
+                clf = joblib.load(os.path.join(opts['classifier_model'], model_name))
                 opts['classifier_features'] = clf['params']  # pass along the settings for this classifier
 
                 if feature_type == 'custom':
