@@ -8,7 +8,10 @@ white_detector_top: models/detection/MARS_top_detection_white.pb
 front_pose_model: models/pose/MARS_front_pose.pb
 top_pose_model: models/pose/MARS_top_pose.pb
 classifier_model: models/classifier/top_xgb_wnd
-classifier_pcf_model: models/classifier/top_pcf_xgb_wnd
+
+# information about your videos.
+pixels_per_cm: 37.795
+framerate: 30
 
 # which stages of analysis to run- pose estimation, feature extraction, and behavior classification
 # feature extraction is a required step if you wish to do behavior classification, and
@@ -23,13 +26,10 @@ doVideo: False
 # overwrite any existing pose/feature/annotation files for a given video
 doOverwrite: False
 
-# type of pose/behavior features to extract:
-# doTop = estimate pose and extract features from top-camera only
-# doFront = pose+features from both top and front cameras (requires a two-camera setup, in which front-view video is saved with filename ending in "_Front")
-# doToppcf = pose from top video, but include pixel-based features from front video (requires a two-camera setup, in which front-view video is saved with filename ending in "_Front")
-doTop: True
-doFront: False
-doToppcf: False
+# cameras available for this experiment. This will determine which detection/pose model is used.
+# note, feature extraction and action classification require a top-view camera, and ignore the front-view camera:
+hasTopCamera: True
+hasFrontCamera: False
 
 # enable background-subtraction prior to mouse detection/pose estimation. This is an experimental feature, it might
 # help MARS to do a better job in arenas it hasn't seen before?

@@ -561,8 +561,8 @@ class GenericThread(QtCore.QThread):
                      'doActions': self.args[2],
                      'doVideo': self.args[3],
                      'doOverwrite': self.args[4],
-                     'doFront': self.args[5],
-                     'doTop': self.args[6],
+                     'hasFrontCamera': self.args[5],
+                     'hasTopCamera': self.args[6],
                      'doToppcf': self.args[7]
                      }
 
