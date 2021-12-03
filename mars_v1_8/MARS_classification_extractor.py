@@ -4,8 +4,6 @@ import os
 import pdb
 
 
-
-
 def classify_actions_wrapper(top_video_fullpath,
                              front_video_fullpath,
                                 doOverwrite,

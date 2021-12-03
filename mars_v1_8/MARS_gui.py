@@ -168,9 +168,9 @@ class MainWindow(QMainWindow):
         self.top_chbox.setVisible(False)
 
         self.doToppcf = False
-        self.toppcf_chbox = QCheckBox('[Top (w/ Front pixel features)]', self)
-        self.toppcf_chbox.stateChanged.connect(self.checkDoToppcf)
-        self.toppcf_chbox.setVisible(False)
+        # self.toppcf_chbox = QCheckBox('[Top (w/ Front pixel features)]', self)
+        # self.toppcf_chbox.stateChanged.connect(self.checkDoToppcf)
+        # self.toppcf_chbox.setVisible(False)
 
         self.doFront = False
         self.front_chbox = QCheckBox('[Front]', self)
@@ -334,7 +334,7 @@ class MainWindow(QMainWindow):
 
             self.front_chbox.setVisible(True)
             self.top_chbox.setVisible(True)
-            self.toppcf_chbox.setVisible(True)
+            # self.toppcf_chbox.setVisible(True)
 
 
             self.run_mars.setVisible(True)
@@ -415,7 +415,7 @@ class MainWindow(QMainWindow):
 
         self.front_chbox.setCheckState(QtCore.Qt.Unchecked)
         self.top_chbox.setCheckState(QtCore.Qt.Unchecked)
-        self.toppcf_chbox.setCheckState(QtCore.Qt.Unchecked)
+        # self.toppcf_chbox.setCheckState(QtCore.Qt.Unchecked)
 
         self.str_proc = ''
         self.progress.setText(self.str_proc)
@@ -443,7 +443,7 @@ class MainWindow(QMainWindow):
 
         self.front_chbox.setEnabled(b)
         self.top_chbox.setEnabled(b)
-        self.toppcf_chbox.setEnabled(b)
+        # self.toppcf_chbox.setEnabled(b)
 
 
     # def stop_event(self):
