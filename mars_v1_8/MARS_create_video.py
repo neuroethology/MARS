@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import progressbar
 sys.path.append('./')
-from util.seqIo import seqIo_reader,parse_ann_dual
+from util.seqIo import seqIo_reader,parse_ann
 import MARS_output_format as mof
 import multiprocessing as mp
 import cv2
@@ -57,7 +57,7 @@ def create_video_results_wrapper(top_video_fullpath,classifier_path,
         top_pose_exist = os.path.exists(top_pose_fullpath)
         video_savename = classifier_savename[:-3]+'mp4'
         video_exists=os.path.exists(video_savename)
-        # print(video_savename)
+
         if not top_pose_exist:
             raise ValueError("No pose has been extracted for this video!")
         if not predictions_exists:
@@ -120,21 +120,19 @@ def create_mp4_prediction(top_video_fullpath,
                 print('video not readable')
             fps = vc.get(cv2.CAP_PROP_FPS)
             if np.isnan(fps): fps = 30.
-            IM_TOP_W = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            IM_TOP_H = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
+            IM_TOP_H = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            IM_TOP_W = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
         num_frames = len(keypoints)
 
-        actions_pred = parse_ann_dual(pred_file_fullpath)
+        actions_pred = parse_ann(pred_file_fullpath)
         ####################################################################
         plt.ioff()
-        fig = plt.figure(figsize=(float(IM_TOP_W-150) / 100.0, float(IM_TOP_H + 100) / 100.0), dpi=100, frameon=False)
+        fig = plt.figure(figsize=(float(IM_TOP_W-150) / 100.0, float(IM_TOP_H + 100) / 100.0), dpi=50, frameon=False)
         fig.patch.set_visible(False)
-        gs1 = gridspec.GridSpec(9, 12)
+        gs1 = gridspec.GridSpec(8, 12)
         gs1.update(left=0, right=1, hspace=0.5,bottom=0.05, top=1,wspace=0.)
         gs1.tight_layout(fig)
-        ax = fig.add_subplot(gs1[:-2, :])
-        # ax = plt.subplot2grid((5, 5), (0, 0), colspan=5, rowspan=4)
-        # ax.add_axes([0.0, 0.0, 1.0, 1.0])
+        ax = fig.add_subplot(gs1[:-1, :])
         ax.set_xlim([0, IM_TOP_W])
         ax.set_ylim([IM_TOP_H, 0])
         ax.set_axis_off()
@@ -145,20 +143,12 @@ def create_mp4_prediction(top_video_fullpath,
 
         # prediction behaviors
         # ax2 = plt.subplot2grid((5, 5), (4, 1), colspan=3, rowspan=1)
-        ax2  = fig.add_subplot(gs1[-2, 1:-2])
+        ax2  = fig.add_subplot(gs1[-1, 1:-2])
         ax2.set_xlim([0, 300])
         ax2.set_ylim([20, 0])
         # ax2.set_axis_off()
         ax2.axes.get_yaxis().set_visible(False)
         ax2.axes.get_xaxis().set_visible(False)
-
-        # prediction interactions
-        ax3  = fig.add_subplot(gs1[-1, 1:-2])
-        ax3.set_xlim([0, 300])
-        ax3.set_ylim([20, 0])
-        # x2.set_axis_off()
-        ax3.axes.get_yaxis().set_visible(False)
-        ax3.axes.get_xaxis().set_visible(False)
 
         num_pt = len(keypoints[0][0][0])
 
@@ -231,67 +221,37 @@ def create_mp4_prediction(top_video_fullpath,
 
                     }
 
-        if 'interaction' in actions_pred['behs_frame']:
-            pred_lab = actions_pred['behs_frame2']
-            pred_lab_int = actions_pred['behs_frame']
-        else:
-            pred_lab = actions_pred['behs_frame']
-            pred_lab_int = actions_pred['behs_frame2']
+        pred_lab = actions_pred['behs_frame']
 
         labels_pred=[]
         for i in pred_lab:
             labels_pred.append(label2id[i]) if i in label2id else labels_pred.append(0)
-        labels_pred.insert(0,0)
+        labels_pred.insert(0, 0)
+        for i in range(150):
+            labels_pred.append(0)
 
-        labels_pred_int=[]
-        for i in pred_lab_int:
-            labels_pred_int.append(label2id[i]) if i in label2id else labels_pred_int.append(0)
-        labels_pred_int.insert(0,0)
-
-        # define the colormap
-        # cmap = cm.jet
-        # extract all colors from the .jet map
-        # cmaplist = [cmap(i) for i in range(cmap.N)]
-        # force the first color entry to be grey
-        # cmaplist[-1] = (.5,.5,.5,1.0)
-        # create the new map
-        # cmap = cmap.from_list('Custom cmap', cmaplist, cmap.N)
-
-        # cmap = cm.ScalarMappable(col.Normalize(0, len(class_names)), cm.jet)
-        # cmap = cmap.to_rgba(range(len(class_names)))
-        # cmap = mpl.colors.ListedColormap(cmap)
-
-        class_names = ['other', 'closeinvestigate', 'mount', 'attack','interaction']
-        colors=['white','blue','green','red','grey']
+        class_names = ['other', 'closeinvestigate', 'mount', 'attack']
+        colors = ['white', 'blue', 'green', 'red']
         cmap = ListedColormap(colors)
         cmap.set_over('0.25')
         cmap.set_under('0.75')
-        # define the bins and normalize
-        bounds = np.linspace(0,5,6)
+        # # define the bins and normalize
+        bounds = np.linspace(0, 4, 5) - 0.5
         norm = col.BoundaryNorm(bounds, cmap.N)
 
         # behs pred
-        pd_mat = np.tile(np.array(labels_pred[:300]),(20,1))
-        im2 = ax2.imshow(pd_mat,cmap=cmap,norm=norm)
-        pd_ind = mpatches.Rectangle((0,0), 1.5, 20, angle=0.0, color='none', ec='black',linewidth=1)
+        pd_mat = np.tile(np.array(labels_pred[:300]), (20, 1))
+        im2 = ax2.imshow(pd_mat, cmap=cmap, norm=norm)
+        pd_ind = mpatches.Rectangle((0, 0), 1.5, 20, angle=0.0, color='none', ec='black', linewidth=1)
         ax2.add_patch(pd_ind)
         pd_text = ax2.text(148, -2, "0")
-        pd_tag = ax2.text(-30,12, "BEHS")
 
-        # interaction pred
-        pd_mat_int = np.tile(np.array(labels_pred_int[:300]),(20,1))
-        im3 = ax3.imshow(pd_mat_int,cmap=cmap,norm=norm)
-        # gt_line = Line2D([IM_TOP_W/2,IM_TOP_W/2],[0,50],color='r', linewidth=3); ax2.add_line(gt_line)
-        pd_ind_int = mpatches.Rectangle((0,0), 1.5, 20, angle=0.0, color='none', ec='black',linewidth=1)
-        ax3.add_patch(pd_ind_int)
-        pd_tag_int = ax3.text(-30, 12, "INTER")
-
-        # colorbar
         ticks = class_names
         # create a second axes for the colorbar
-        ax4= fig.add_axes([0.85, 0.03, 0.015, 0.2])
+        ax4 = fig.add_axes([0.85, 0.03, 0.01, 0.15])
         # ax3.set_axis_off()
-        cb = cbar.ColorbarBase(ax4, cmap=cmap, norm=norm, spacing='proportional', ticks=bounds+.5, boundaries=bounds)
+        cb = cbar.ColorbarBase(ax4, cmap=cmap, norm=norm, spacing='proportional',
+                               ticks=bounds[:-1] + (bounds[1] - bounds[0]) / 2.0, boundaries=bounds)
         cb.ax.tick_params(labelsize=8)
         cb.ax.set_yticklabels(ticks)
 
@@ -299,7 +259,7 @@ def create_mp4_prediction(top_video_fullpath,
                                       [progressbar.FormatLabel('frame %(value)d'), '/' , progressbar.FormatLabel('%(max)d  '), progressbar.Percentage(), ' -- ', ' [', progressbar.Timer(), '] ',
                                        progressbar.Bar(), ' (', progressbar.ETA(), ') '], maxval=len(keypoints))
         bar.start()
-        queue_for_number_processed.put([0,num_frames-1])
+        queue_for_number_processed.put([0, num_frames-1])
 
         def animate(f):
             queue_for_number_processed.put([f,0])
@@ -347,19 +307,19 @@ def create_mp4_prediction(top_video_fullpath,
 
             pd_text.set_text(str(f))
 
-            if f >= 300:
+            if f >= 150:
                 pd_mat = np.tile(np.array(labels_pred[f-150:f+151]), (20, 1))
                 im2.set_data(pd_mat)
                 pd_ind.set_xy((150,0))
-                pd_mat_int = np.tile(np.array(labels_pred_int[f - 150:f + 151]), (20, 1))
-                im3.set_data(pd_mat_int)
-                pd_ind_int.set_xy((150, 0))
+                # pd_mat_int = np.tile(np.array(labels_pred_int[f - 150:f + 151]), (20, 1))
+                # im3.set_data(pd_mat_int)
+                # pd_ind_int.set_xy((150, 0))
             else:
                 pd_ind.set_xy((f,0))
-                pd_ind_int.set_xy((f,0))
+                # pd_ind_int.set_xy((f,0))
             bar.update(f)
             return
-        # print("animating")
+        print("animating")
         ani = FuncAnimation(fig, animate, repeat=False, blit=False, frames= num_frames)
 
         mywriter = FFMpegWriter(fps=fps)
