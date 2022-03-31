@@ -5,7 +5,6 @@ import joblib
 
 
 
-
 def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doOverwrite, view, classifier_path='', output_suffix=''):
     try:
         video_fullpath = top_video_fullpath

@@ -110,6 +110,33 @@ def load_features_from_filename(top_feat_name='', front_feat_name=''):
 
     return features
 
+
+def apply_feature_order(feats, target_order, current_order):
+    if any(x not in current_order for x in target_order):
+        fail_list = [x for x in target_order if x not in current_order]
+        raise KeyError('One or more features required by the classifier were not found: ' + ', '.join(fail_list))
+    feat_order = []
+    for t in target_order:
+        feat_order.append(current_order.index(t))
+    feats_sorted = np.take(feats, feat_order, axis=2)
+    return feats_sorted
+
+
+def load_custom_features(feat_name='', clf=None):
+    if not os.path.exists(feat_name):
+        raise ValueError('I couldn''nt find a file at ' + feat_name)
+
+    all_feats = np.load(feat_name)
+    if clf and 'feature_order' in clf['params'].keys():
+        target_order = clf['params']['feature_order']
+        loaded_order = all_feats['features']
+        features = apply_feature_order(all_feats['data_smooth'], target_order, loaded_order)
+    else:
+        features = all_feats['data_smooth']
+
+    return features
+
+
 def load_features_front(front_feat_name):
     flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, (tuple, list)) else (a,)))
     vid = np.load(front_feat_name)
@@ -222,13 +249,18 @@ def predict_probabilities(classifier_path, top_feat_names, front_feat_names=[], 
             blur_steps = classifier['params']['blur']
             shift = classifier['params']['shift']
 
-            if 'top' in classifier['params']['feat_type']:
+            if 'project_config' in classifier['params'].keys():  # this is a new, custom classifier
                 if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
-                    features = load_features_from_filename(top_feat_name=top_feat_name[behavior])
+                    features = load_custom_features(feat_name=top_feat_names[behavior], clf=classifier)
+                    # TODO: add feature order adjustment here!!!
+                    active_featname = top_feat_names[behavior]
+            elif 'top' in classifier['params']['feat_type']:
+                if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
+                    features = load_features_from_filename(top_feat_name=top_feat_names[behavior])
                     active_featname = top_feat_names[behavior]
             elif classifier['params']['feat_type'] == 'topfront':
                 if active_featname != top_feat_names[behavior]:
-                    features = mcm.load_features_from_filename(top_feat_name=top_feat_names[behavior],
+                    features = load_features_from_filename(top_feat_name=top_feat_names[behavior],
                                                                front_feat_name=front_feat_names[behavior])
                     active_featname = top_feat_names[behavior]
 
