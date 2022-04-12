@@ -156,19 +156,23 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
         clf = joblib.load(os.path.join(classifier_path, model_name))
         if 'project_config' in clf['params'].keys():
             feature_type = 'custom'  # note: we specify the exact feature set to extract in the classifier config file.
-            feature_groups = clf['feat_list']
+            feature_groups = clf['params']['feat_list']
+            cfg = clf['params']['project_config']
         elif 'pcf' in classifier_path:
             feature_type = 'raw_pcf'  # older mars classifiers don't have an associated project config saved with them.
             feature_groups = []
+            cfg = []
         else:
             feature_type = 'raw'
             feature_groups = []
+            cfg = []
 
         # Puts it in (type)_(view)_(suffix) format
         feat_designator = '_'.join([feature_type, 'feat', view, output_suffix])
         feat_basenames.update({behavior: {'path': output_plus_mouse + '_' + feat_designator,
                                           'feature_type': feature_type,
-                                          'feature_groups': feature_groups}})
+                                          'feature_groups': feature_groups,
+                                          'clf_config': cfg}})
 
     return feat_basenames
 
