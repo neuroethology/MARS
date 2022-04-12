@@ -3335,14 +3335,14 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                     if not feature_types_extracted and not doOverwrite:  # we haven't extracted features this run, but we have some in a file from earlier, and we're not overwriting it.
                         feat_from_all_behaviors = np.load(feat_basename + '.npz')
                         existing_features = feat_from_all_behaviors['features']
-                        feature_types_extracted = existing_features
+                        feature_types_extracted = existing_features.tolist()
                     # check the feature types we've extracted so far:
                     if all(f in feature_types_extracted for f in feature_names):
                         if not doOverwrite:
                             continue
                 features_to_add = [f for f in feature_names if f not in feature_types_extracted]
                 grps_to_add = list(set([g for m in mouse_list for g in list(all_feats[feature_view][m].keys()) for f in features_to_add if f.replace(feature_view+'_','').replace(m+'_','') in all_feats[feature_view][m][g]]))
-                feature_types_extracted+=features_to_add
+                feature_types_extracted += features_to_add
                 feature_types_extracted = list(set(feature_types_extracted))
                 if not grps_to_add:
                     continue
