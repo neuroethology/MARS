@@ -118,7 +118,7 @@ def apply_feature_order(feats, target_order, current_order):
     feat_order = []
     for t in target_order:
         feat_order.append(current_order.index(t))
-    feats_sorted = np.take(feats, feat_order, axis=2)
+    feats_sorted = np.take(feats, feat_order, axis=1)
     return feats_sorted
 
 
@@ -129,10 +129,24 @@ def load_custom_features(feat_name='', clf=None):
     all_feats = np.load(feat_name)
     if clf and 'feature_order' in clf['params'].keys():
         target_order = clf['params']['feature_order']
-        loaded_order = all_feats['features']
-        features = apply_feature_order(all_feats['data_smooth'], target_order, loaded_order)
+        loaded_order = list(all_feats['features'])
+        if clf['params']['do_wnd']:
+            # we need the name of the windowed features shoot
+            windows = [round((f * clf['params']['project_config']['framerate'] + 1) * 2) for f in clf['params']['windows']]
+            suffixes = ['min', 'max', 'mean', 'std']
+            windowed_order = []
+            for f in target_order:
+                for w in windows:
+                    for s in suffixes:
+                        windowed_order.append('_'.join((f,str(w),s)))
+            features = apply_feature_order(all_feats['data'], windowed_order, loaded_order)
+        else:
+            features = apply_feature_order(all_feats['data_smooth'], target_order, loaded_order)
     else:
-        features = all_feats['data_smooth']
+        if feat_name.endswith('_wnd.npz'):
+            features = all_feats['data']
+        else:
+            features = np.squeeze(all_feats['data_smooth'])
 
     return features
 
@@ -240,7 +254,7 @@ def predict_probabilities(classifier_path, top_feat_names, front_feat_names=[], 
             # Get the most recent classifier for this behavior
             name_classifier = mof.get_most_recent(classifier_path, models, behavior)
 
-            classifier = joblib.load(name_classifier)
+            classifier = joblib.load(os.path.join(classifier_path, name_classifier)) # name_classifier isn't the full path?
 
             scaler = classifier['scaler']
             bag_clf = classifier['bag_clf'] if 'bag_clf' in classifier.keys() else classifier['clf']
@@ -543,96 +557,3 @@ def dump_bento(video_fullpath, output_suffix='', pose_file = '', basepath = ''):
     bento_name = 'bento_' + output_suffix +'.xls'
     wb.save(os.path.join(output_folder,bento_name))
     return 1
-
-
-# def dump_bento(video_fullpath, output_suffix='', pose_file = ''):
-#     if not output_suffix:
-#             # Default suffix is just the version number.
-#         output_suffix = mof.get_version_suffix()
-#     video_path = os.path.dirname(video_fullpath)
-#     video_name = os.path.basename(video_fullpath)
-#
-#     # Get the output folder for this specific mouse.
-#     output_folder = mof.get_mouse_output_dir(dir_output_should_be_in=video_path, video_name=video_name,
-#                                              output_suffix=output_suffix)
-#     mouse_name = output_folder.split('/')[-1]
-#
-#     # if not movie_file:
-#     #     movie_name = mouse_name + '_Top_J85.seq'
-#     #
-#     #     movie_location = output_folder
-#     #     movie_location = os.path.split(movie_location)[0]
-#     #     movie_location = os.path.split(movie_location)[0]
-#     #
-#     #     movie_file = os.path.join(movie_location, movie_name)
-#     # else:
-#         # movie_file = os.path.basename(movie_file)
-#
-#     if not pose_file:
-#         pose_basename = mof.get_pose_no_ext(video_fullpath=video_fullpath,
-#                                             output_folder=output_folder,
-#                                             view='top',
-#                                             output_suffix=output_suffix)
-#
-#         top_pose_fullpath = pose_basename + '.mat'
-#     # else:
-#         # pose_file = os.path.basename(pose_file)
-#
-#     """ This function writes an xls with information for bento in it."""
-#     wb = xlwt.Workbook(encoding='utf-8')
-#     ws1 = wb.add_sheet('Sheet1', cell_overwrite_ok=True)
-#     ws1.write(0, 0, os.path.abspath('/') ) # A1
-#     ws1.write(0, 1, 'Ca framerate:')  # B1
-#     ws1.write(0, 2, 0)  # C1
-#     ws1.write(0, 3, 'Annot framerate:')  # D1
-#     ws1.write(0, 4, 30)  # E1
-#     ws1.write(0, 5, 'Multiple trials/Ca file:')  # F1
-#     ws1.write(0, 6, 0)  # G1
-#     ws1.write(0, 7, 'Multiple trails/annot file')  # H1
-#     ws1.write(0, 8, 0)  # I1
-#     ws1.write(0, 9, 'Includes behavior movies:')  # J1
-#     ws1.write(0, 10, 1)  # K1
-#     ws1.write(0, 11, 'Offset (in seconds; positive values = annot starts before Ca):')  # L1
-#     ws1.write(0, 12, 0)  # M1
-#
-#     ws1.write(1, 0, 'Mouse')  # A2
-#     ws1.write(1, 1, 'Sessn')  # B2
-#     ws1.write(1, 2, 'Trial')  # C2
-#     ws1.write(1, 3, 'Stim')  # D2
-#     ws1.write(1, 4, 'Calcium imaging file')  # E2
-#     ws1.write(1, 5, 'Start Ca')  # F2
-#     ws1.write(1, 6, 'Stop Ca')  # G2
-#     ws1.write(1, 7, 'FR Ca')  # H2
-#     ws1.write(1, 8, 'Alignments')  # I2
-#     ws1.write(1, 9, 'Annotation file')  # J2
-#     ws1.write(1, 10, 'Start Anno')  # K2
-#     ws1.write(1, 11, 'Stop Anno')  # L2
-#     ws1.write(1, 12, 'FR Anno')  # M2
-#     ws1.write(1, 13, 'Offset')  # N2
-#     ws1.write(1, 14, 'Behavior movie')  # O2
-#     ws1.write(1, 15, 'Tracking')  # P2
-#
-#     ws1.write(2, 0, 1)  # A2
-#     ws1.write(2, 1, 1)  # B2
-#     ws1.write(2, 2, 1)  # C2
-#     ws1.write(2, 3, '')  # D2
-#     ws1.write(2, 4, '')  # E2
-#     ws1.write(2, 5, '')  # F2
-#     ws1.write(2, 6, '')  # G2
-#     ws1.write(2, 7, '')  # H2
-#     ws1.write(2, 8, '')  # I2
-#     ann = [os.path.join(output_folder,f)
-#            for f in os.listdir(output_folder) if is_gt_annotation(f)|('actions_pred' in f)]
-#     ann = sorted(ann)
-#     ws1.write(2, 9, ';'.join(ann))  # J2
-#     ws1.write(2, 10, '')  # K2
-#     ws1.write(2, 11, '')  # L2
-#     ws1.write(2, 12, '')  # M2
-#     ws1.write(2, 13, '')  # N2
-#     ws1.write(2, 14, video_fullpath)  # O2
-#     ws1.write(2, 15, top_pose_fullpath)  # P2
-#
-#     bento_name = 'bento_' + output_suffix +'.xls'
-#     wb.save(os.path.join(output_folder,bento_name))
-#     return 1
-

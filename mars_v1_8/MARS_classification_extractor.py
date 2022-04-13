@@ -2,6 +2,7 @@ import MARS_classification_machinery as mcm
 import MARS_output_format as mof
 import os
 import joblib
+import pdb
 
 
 
@@ -12,6 +13,7 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
         video_name = os.path.basename(video_fullpath)
 
         model_type = mof.get_clf_type(classifier_path=classifier_path)
+
 
         # Get the output folder for this specific mouse.
         output_folder = mof.get_mouse_output_dir(dir_output_should_be_in=video_path, video_name=video_name,
@@ -31,7 +33,6 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
                                             output_suffix=output_suffix)
 
         behaviors = list(top_feat_dict.keys())
-
         # Get the name of the text file we're going to save to.
         classifier_savename = mof.get_classifier_savename(video_fullpath=top_video_fullpath,
                                             output_folder=output_folder,
@@ -49,7 +50,7 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
         for behavior in top_feat_dict.keys():
             model_name = mof.get_most_recent(classifier_path, clf_models, behavior)
             clf = joblib.load(os.path.join(classifier_path, model_name))
-            top_feat_basename = top_feat_dict[behavior]
+            top_feat_basename = top_feat_dict[behavior]['path']
             if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:
                 top_feat_name = top_feat_basename + '_wnd.npz'
             else:
@@ -61,7 +62,7 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
         for behavior in front_feat_dict.keys():
             model_name = mof.get_most_recent(classifier_path, clf_models, behavior)
             clf = joblib.load(os.path.join(classifier_path, model_name))
-            front_feat_basename = front_feat_dict[behavior]
+            front_feat_basename = front_feat_dict[behavior]['path']
             if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:
                 front_feat_name = front_feat_basename + '_wnd.npz'
             else:
