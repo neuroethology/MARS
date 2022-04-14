@@ -11,6 +11,7 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
         video_fullpath = top_video_fullpath
         video_path = os.path.dirname(video_fullpath)
         video_name = os.path.basename(video_fullpath)
+        framerate = 30  # hard-coded default, get this from clf in future
 
         model_type = mof.get_clf_type(classifier_path=classifier_path)
 
@@ -51,6 +52,7 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
             model_name = mof.get_most_recent(classifier_path, clf_models, behavior)
             clf = joblib.load(os.path.join(classifier_path, model_name))
             top_feat_basename = top_feat_dict[behavior]['path']
+            framerate = clf['params']['project_config']['framerate']
             if 'do_wnd' not in clf['params'].keys() or clf['params']['do_wnd']:
                 top_feat_name = top_feat_basename + '_wnd.npz'
             else:
@@ -88,13 +90,17 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
             
             # Classify the actions (get the labels back).
             print("predicting labels")
-            predicted_labels, predicted_labels_interaction = mcm.predict_labels(classifier_path,
-                                                                                top_feat_names=top_feat_names,
-                                                                                front_feat_names=front_feat_names,
-                                                                                behaviors=behaviors)
+            predicted_labels, predicted_labels_interaction, probas, behavior_names = mcm.predict_labels(classifier_path,
+                                                                                        top_feat_names=top_feat_names,
+                                                                                        front_feat_names=front_feat_names,
+                                                                                        behaviors=behaviors)
+            print('predicted!')
 
             # Dump the labels into the Caltech Behavior Annotator format.
-            mcm.dump_labels_CBA(predicted_labels, predicted_labels_interaction, classifier_savename)
+            # mcm.dump_labels_CBA(predicted_labels, predicted_labels_interaction, classifier_savename)
+            mcm.dump_labels_bento(predicted_labels, classifier_savename.replace('.txt', '.annot'),
+                                  moviename=top_video_fullpath, framerate=framerate, beh_list=behavior_names)
+            mcm.dump_proba(probas, behavior_names, classifier_savename, fps=framerate)
         else:
             print("3 - Predictions already exist")
             return
