@@ -19,7 +19,9 @@ import scipy.io as sio
 import numpy.core.records as npc
 import joblib
 import yaml
+import copy
 import progressbar
+import pdb
 
 warnings.filterwarnings('ignore')
 sys.path.append('./')
@@ -3364,6 +3366,7 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                                                   features=grps_to_add)
                     feat['features'] = feat_from_all_behaviors['features'] + feat['features']  # 'features' field reflects features in order added
                     feat['data_smooth'] = np.concatenate((feat_from_all_behaviors['data_smooth'], feat['data_smooth']), axis=2) if feat_from_all_behaviors['data_smooth'] else feat['data_smooth']
+                    feat_from_all_behaviors = copy.deepcopy(feat)
 
                 elif feature_type == 'raw_pcf':
                     num_mice = 2
