@@ -13,6 +13,7 @@ import xlwt
 import joblib
 import MARS_output_format as mof
 import scipy.io as sp
+import pdb
 
 def get_rel_path(path, start=''):
     return './' + os.path.relpath(path,start)
@@ -265,9 +266,9 @@ def predict_probabilities(classifier_path, top_feat_names, front_feat_names=[], 
             shift = classifier['params']['shift']
 
             if 'project_config' in classifier['params'].keys():  # this is a new, custom classifier
-                if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
-                    features = load_custom_features(feat_name=top_feat_names[behavior], clf=classifier)
-                    active_featname = top_feat_names[behavior]
+                # if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
+                features = load_custom_features(feat_name=top_feat_names[behavior], clf=classifier)
+                active_featname = top_feat_names[behavior]
             elif 'top' in classifier['params']['feat_type']:
                 if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
                     features = load_features_from_filename(top_feat_name=top_feat_names[behavior])

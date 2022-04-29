@@ -3324,6 +3324,17 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
         feature_types_extracted = []
         feat_from_all_behaviors = {'features': [], 'data_smooth': False, 'bbox': False, 'keypoints': False, 'fps': []}
         featFlag = False
+
+        all_windows = []
+        for behavior in feat_basename_dict.keys():  # figure out all the windows we'll need
+            model_name = mof.get_most_recent(opts['classifier_model'], clf_models, behavior)
+            clf = joblib.load(os.path.join(opts['classifier_model'], model_name))
+            if feat_basename_dict[behavior]['feature_type'] == 'custom':
+                all_windows += [int(np.ceil(w * opts['framerate']) * 2 + 1) for w in clf['params']['windows']]
+            else:
+                all_windows = [int(np.ceil(w * opts['framerate']) * 2 + 1) for w in [0.033333, 0.16667, 0.33333]]
+        all_windows = list(set(all_windows))
+
         for behavior in feat_basename_dict.keys():
             feat_basename = feat_basename_dict[behavior]['path']
             feature_type = feat_basename_dict[behavior]['feature_type']
@@ -3399,20 +3410,17 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                     n_feat = feat['data_smooth'].shape[2]
                     if feature_type == 'custom':
                         featToKeep = tuple(flatten([range(n_feat)]))
-                        windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in clf['params']['windows']]
                         view = 'custom'
                     elif feature_type == 'raw_pcf':
                         featToKeep = tuple(flatten([range(39), range(50, 66), 67, 69, 70, 71, range(121, n_feat)]))
-                        windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in [0.033333, 0.16667, 0.33333]]
                         view = feature_view + '_pcf'
                     elif feature_type == 'raw':
                         featToKeep = tuple(flatten([range(39), range(42, 58), 59, 61, 62, 63, range(113, n_feat)]))
-                        windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in [0.033333, 0.16667, 0.33333]]
                         view = feature_view
                     else:
                         raise ValueError("feature type " + feature_type + "not recognized")
 
-                    feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
+                    feat_wnd = compute_windows_features(feat, view, featToKeep, windows=all_windows, num_mice=num_mice)
                     np.savez(feat_basename + "_wnd", **feat_wnd)
                     sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
 
