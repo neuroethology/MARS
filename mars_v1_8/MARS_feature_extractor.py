@@ -397,6 +397,8 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
                     featname = "_".join((use_cam, mouse_list[m], feat))
                     if featname in features:
                         track['data'][m, f, features.index(featname)] = lam['xy'][feat](xa, ya) / dscale
+                        if m == 0 and f == 0:
+                            features_ordered.append(featname)
 
                 # single-mouse angle or ratio features. No unit conversion needed.
                 for feat in lam['xy_ang'].keys():
@@ -3321,6 +3323,7 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
 
         feature_types_extracted = []
         feat_from_all_behaviors = {'features': [], 'data_smooth': False, 'bbox': False, 'keypoints': False, 'fps': []}
+        featFlag = False
         for behavior in feat_basename_dict.keys():
             feat_basename = feat_basename_dict[behavior]['path']
             feature_type = feat_basename_dict[behavior]['feature_type']
@@ -3337,6 +3340,7 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                     if not feature_types_extracted and not doOverwrite:  # we haven't extracted features this run, but we have some in a file from earlier, and we're not overwriting it.
                         feat_from_all_behaviors = np.load(feat_basename + '.npz')
                         existing_features = feat_from_all_behaviors['features']
+                        featFlag = True
                         feature_types_extracted = existing_features.tolist()
                     # check the feature types we've extracted so far:
                     if all(f in feature_types_extracted for f in feature_names):
@@ -3365,8 +3369,9 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                                                   max_frames=max_frames,
                                                   features=grps_to_add)
                     feat['features'] = feat_from_all_behaviors['features'] + feat['features']  # 'features' field reflects features in order added
-                    feat['data_smooth'] = np.concatenate((feat_from_all_behaviors['data_smooth'], feat['data_smooth']), axis=2) if type(feat_from_all_behaviors['data_smooth'])==bool else feat['data_smooth']
+                    feat['data_smooth'] = np.concatenate((feat_from_all_behaviors['data_smooth'], feat['data_smooth']), axis=2) if featFlag else feat['data_smooth']
                     feat_from_all_behaviors = copy.deepcopy(feat)
+                    featFlag = True
 
                 elif feature_type == 'raw_pcf':
                     num_mice = 2
@@ -3411,10 +3416,11 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                     np.savez(feat_basename + "_wnd", **feat_wnd)
                     sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
 
-                dt = (time.time() - t) / 60.
-                print('[DONE] feature extraction in %5.2f mins' % (dt))
             else:
                 print('2 - Features top already extracted')
+
+        dt = (time.time() - t) / 60.
+        print('[DONE] feature extraction in %5.2f mins' % (dt))
         return
     except Exception as e:
         import linecache
