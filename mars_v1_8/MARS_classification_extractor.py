@@ -94,16 +94,20 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
                                                                                         top_feat_names=top_feat_names,
                                                                                         front_feat_names=front_feat_names,
                                                                                         behaviors=behaviors)
-            merged_labels = mcm.merge_multiclass(classifier_path, probas, behaviors)
+            if os.path.exists(os.path.join(classifier_path, 'class_merger')):
+                merged_labels = mcm.merge_multiclass(classifier_path, probas, behaviors)
             print('predicted!')
 
             # Dump the labels into the Caltech Behavior Annotator format.
             # mcm.dump_labels_CBA(predicted_labels, predicted_labels_interaction, classifier_savename)
-            # mcm.dump_labels_bento(predicted_labels, classifier_savename.replace('.txt', '.annot'),
-            #                       moviename=top_video_fullpath, framerate=framerate, beh_list=behavior_names)
-            mcm.dump_labels_bento(merged_labels, classifier_savename.replace('.txt', '.annot'),
-                                  moviename=top_video_fullpath, framerate=framerate, beh_list=behavior_names)
-            mcm.dump_proba(probas, behavior_names, classifier_savename, fps=framerate)
+
+            if os.path.exists(os.path.join(classifier_path, 'class_merger')):
+                mcm.dump_labels_bento(merged_labels, classifier_savename.replace('.txt', '.annot'),
+                                      moviename=top_video_fullpath, framerate=framerate, beh_list=behavior_names)
+                mcm.dump_proba(probas, behavior_names, classifier_savename, fps=framerate)
+            else:
+                mcm.dump_labels_bento(predicted_labels, classifier_savename.replace('.txt', '.annot'),
+                                      moviename=top_video_fullpath, framerate=framerate, beh_list=behavior_names)
         else:
             print("3 - Predictions already exist")
             return
