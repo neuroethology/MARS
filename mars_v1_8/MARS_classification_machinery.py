@@ -224,6 +224,27 @@ def load_features_both_wnd(top_feat_name, front_feat_name):
     return features
 
 
+def merge_multiclass(classifier_path, probas, behaviors):
+    print("merging multiclass predictions")
+
+    clf = joblib.load(os.path.join(classifier_path, 'class_merger'))
+    proba_sorted = np.zeros(np.shape(probas))
+    for beh in clf['vocab'].keys():
+        if beh in behaviors:
+            ind = behaviors.index(beh)
+            proba_sorted[clf['vocab'][beh], :] = probas[ind, :]
+
+    results = clf['clf'].predict(proba_sorted)
+
+    results_sorted = np.zeros(np.shape(results))
+    for beh in clf['vocab'].keys():
+        if beh in behaviors:
+            ind = behaviors.index(beh)
+            results_sorted[results == clf['vocab'][beh]] = ind
+
+    return results
+
+
 def predict_labels(classifier_path, top_feat_names, front_feat_names, behaviors):
     print("predicting probabilities")
     all_predicted_probabilities, behaviors_used = predict_probabilities(classifier_path=classifier_path,
