@@ -228,8 +228,9 @@ def merge_multiclass(classifier_path, probas, behaviors):
     print("merging multiclass predictions")
 
     clf = joblib.load(os.path.join(classifier_path, 'class_merger'))
-    proba_sorted = np.zeros(np.shape(probas))
-    for beh in clf['vocab'].keys():
+    n_classes = max(clf['vocab'].values()) + 1
+    proba_sorted = np.zeros((n_classes, np.shape(probas)[1]))
+    for beh in clf['merged_behaviors']:
         if beh in behaviors:
             ind = behaviors.index(beh)
             proba_sorted[clf['vocab'][beh], :] = probas[ind, :]
