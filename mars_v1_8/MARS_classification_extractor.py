@@ -94,7 +94,7 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
 
             predicted_labels, predicted_labels_interaction, probas, behavior_names = mcm.predict_labels(opts,
                                                                                                         classifier_path,
-                                                                                        top_feat_names=top_feat_names,
+                                                                                        top_feat_filenames=top_feat_filenames,
                                                                                         front_feat_names=front_feat_names,
                                                                                         behaviors=behaviors)
             if os.path.exists(os.path.join(classifier_path, 'class_merger')):
