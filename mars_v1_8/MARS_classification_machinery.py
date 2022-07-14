@@ -12,7 +12,12 @@ from sklearn.preprocessing import binarize
 import xlwt
 import joblib
 import MARS_output_format as mof
+<<<<<<< HEAD
 import MARS_feature_extractor as mfe
+=======
+import scipy.io as sp
+import pdb
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6
 
 def get_rel_path(path, start=''):
     return './' + os.path.relpath(path,start)
@@ -114,6 +119,65 @@ def load_features_from_filename(top_feat_name='', front_feat_name=''):
         raise(e)
     return features, names
 
+<<<<<<< HEAD
+=======
+    return features
+
+
+def apply_feature_order(feats, target_order, current_order):
+    if any(x not in current_order for x in target_order):
+        fail_list = [x for x in target_order if x not in current_order]
+        raise KeyError('One or more features required by the classifier were not found: ' + ', '.join(fail_list))
+    feat_order = []
+    for t in target_order:
+        feat_order.append(current_order.index(t))
+    feats_sorted = np.take(feats, feat_order, axis=1)
+    return feats_sorted
+
+
+def load_custom_features(feat_name='', clf=None):
+    if not os.path.exists(feat_name):
+        raise ValueError('I couldn''nt find a file at ' + feat_name)
+
+    all_feats = np.load(feat_name)
+    if clf and 'feature_order' in clf['params'].keys():
+        target_order = clf['params']['feature_order']
+        loaded_order = list(all_feats['features'])
+        if clf['params']['do_wnd']:
+            # we need the name of the windowed features shoot
+            windows = [round((f * clf['params']['project_config']['framerate'] + 1) * 2) for f in clf['params']['windows']]
+            suffixes = ['min', 'max', 'mean', 'std']
+            windowed_order = []
+            for f in target_order:
+                for w in windows:
+                    for s in suffixes:
+                        windowed_order.append('_'.join((f,str(w),s)))
+            features = apply_feature_order(all_feats['data'], windowed_order, loaded_order)
+        else:
+            features = apply_feature_order(all_feats['data_smooth'], target_order, loaded_order)
+    else:
+        if feat_name.endswith('_wnd.npz'):
+            features = all_feats['data']
+        else:
+            features = np.squeeze(all_feats['data_smooth'])
+
+    return features
+
+
+def load_features_front(front_feat_name):
+    flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, (tuple, list)) else (a,)))
+    vid = np.load(front_feat_name)
+    d = vid['data_smooth']
+    n_feat=d.shape[2]
+    features = clean_data(d)
+    features = normalize_pixel_data(features,'front')
+    features = clean_data(features)
+    featToKeep = list(flatten([range(47), range(56,74), 75,77,78,79, range(201, n_feat)]))
+    features = np.hstack((features[0, :, :], features[1, :, featToKeep].transpose()))
+
+    print('front features loaded')
+    return features
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6
 
 def load_features(filename):
     feats = np.load(filename)
@@ -160,7 +224,33 @@ def apply_feature_order(feats, target_order, current_order):
     return feats_sorted
 
 
+<<<<<<< HEAD
 def predict_labels(opts, classifier_path, top_feat_filenames, front_feat_names, behaviors):
+=======
+def merge_multiclass(classifier_path, probas, behaviors):
+    print("merging multiclass predictions")
+
+    clf = joblib.load(os.path.join(classifier_path, 'class_merger'))
+    n_classes = max(clf['vocab'].values()) + 1
+    proba_sorted = np.zeros((n_classes, np.shape(probas)[1]))
+    for beh in clf['merged_behaviors']:
+        if beh in behaviors:
+            ind = behaviors.index(beh)
+            proba_sorted[clf['vocab'][beh], :] = probas[ind, :]
+
+    results = clf['clf'].predict(proba_sorted)
+
+    results_sorted = np.zeros(np.shape(results))
+    for beh in clf['vocab'].keys():
+        if beh in behaviors:
+            ind = behaviors.index(beh)
+            results_sorted[results == clf['vocab'][beh]] = ind
+
+    return results
+
+
+def predict_labels(classifier_path, top_feat_names, front_feat_names, behaviors):
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6
     print("predicting probabilities")
     all_predicted_probabilities, behaviors_used = predict_probabilities(opts,
                                                                         classifier_path=classifier_path,
@@ -170,7 +260,7 @@ def predict_labels(opts, classifier_path, top_feat_filenames, front_feat_names, 
     print("assigning labels")
     labels, labels_iteraction = assign_labels(all_predicted_probabilities=all_predicted_probabilities,
                            behaviors_used=behaviors_used)
-    return labels, labels_iteraction
+    return labels, labels_iteraction, all_predicted_probabilities[:, :, 1], behaviors_used
 
 
 def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_names=[], behaviors=[], VERBOSE=True):
@@ -192,7 +282,13 @@ def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_
 
             # Get the most recent classifier for this behavior
             name_classifier = mof.get_most_recent(classifier_path, models, behavior)
+<<<<<<< HEAD
             classifier = joblib.load(os.path.join(classifier_path,name_classifier))
+=======
+
+            classifier = joblib.load(os.path.join(classifier_path, name_classifier)) # name_classifier isn't the full path?
+
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6
             scaler = classifier['scaler']
             bag_clf = classifier['bag_clf'] if 'bag_clf' in classifier.keys() else classifier['clf']
             hmm_fbs = classifier['hmm_fbs']
@@ -200,6 +296,7 @@ def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_
             blur_steps = classifier['params']['blur']
             shift = classifier['params']['shift']
 
+<<<<<<< HEAD
             if 'top' in classifier['params']['feat_type']:
                 if loaded_filename != top_feat_filenames[behavior]:  # don't re-load a feature set if we've already loaded it
                     raw_features, names = load_features_from_filename(top_feat_name=top_feat_filenames[behavior])
@@ -228,6 +325,22 @@ def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_
                 features = feat_dict['data']
             else:
                 features = sorted_features
+=======
+            if 'project_config' in classifier['params'].keys():  # this is a new, custom classifier
+                # if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
+                features = load_custom_features(feat_name=top_feat_names[behavior], clf=classifier)
+                active_featname = top_feat_names[behavior]
+            elif 'top' in classifier['params']['feat_type']:
+                if active_featname != top_feat_names[behavior]:  # don't re-load if we've already loaded
+                    features = load_features_from_filename(top_feat_name=top_feat_names[behavior])
+                    active_featname = top_feat_names[behavior]
+            elif classifier['params']['feat_type'] == 'topfront':
+                if active_featname != top_feat_names[behavior]:
+                    features = load_features_from_filename(top_feat_name=top_feat_names[behavior],
+                                                               front_feat_name=front_feat_names[behavior])
+                    active_featname = top_feat_names[behavior]
+
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6
 
             # Keep track of which behaviors get used.
             behaviors_used += [behavior]
@@ -261,8 +374,10 @@ def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_
             y_pred_fbs_hmm = np.argmax(y_proba_fbs_hmm, axis=1)
 
             # Add our predictions to the list.
-            preds_fbs_hmm.append(y_pred_fbs_hmm)
-            proba_fbs_hmm.append(y_proba_fbs_hmm)
+            # preds_fbs_hmm.append(y_pred_fbs_hmm)
+            # proba_fbs_hmm.append(y_proba_fbs_hmm)
+            preds_fbs_hmm.append(predicted_class)
+            proba_fbs_hmm.append(predicted_probabilities)
 
             if VERBOSE:
                 secs_elapsed = (tt() - tstart)
@@ -327,6 +442,7 @@ def is_gt_annotation(filename):
     cond3 = filename.endswith('Teresa.txt')
     return cond1|cond2|cond3
 
+
 def get_annotation_keys():
     annotation_keys = ['other o',
                         'closeinvestigation i', 'sniff_genital g', 'sniff_body b', 'sniff_face f',
@@ -339,7 +455,8 @@ def get_annotation_keys():
                         'interaction c']
     return annotation_keys
 
-def dump_labels_CBA(labels,labels_interaction, classification_txtname):
+
+def dump_labels_CBA(labels, labels_interaction, classification_txtname):
     annotation_keys = get_annotation_keys()
     lab2k = '\n'.join(annotation_keys)
     lab2k += '\n'
@@ -418,6 +535,7 @@ def dump_labels_CBA(labels,labels_interaction, classification_txtname):
     return
 
 
+<<<<<<< HEAD
 def string_to_bouts(textlist):  # a helper for the bento save format
     names = list(set(textlist))
     bouts = dict.fromkeys(names, None)
@@ -471,6 +589,96 @@ def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['m
 
 
 def dump_bento(video_fullpath, output_suffix='', pose_file = '', basepath = ''):
+=======
+def rast_to_bouts(oneHot, names):  # a helper for the bento save format
+    bouts = dict.fromkeys(names, None)
+    for val,name in enumerate(names):
+        bouts[name] = {'start': [], 'stop': []}
+        rast = [annot == val+1 for annot in oneHot]
+        rast = [False] + rast + [False]
+        start = [i+1 for i,(a,b) in enumerate(zip(rast[1:],rast[:-1])) if (a and not b)]
+        stop  = [i for i,(a,b) in enumerate(zip(rast[:-1],rast[1:])) if (a and not b)]
+        bouts[name]['start'] = start
+        bouts[name]['stop'] = stop
+    return bouts
+
+
+def list_to_bouts(labels):  # a helper for the bento save format
+    names = list(set(labels))
+    bouts = dict.fromkeys(names, None)
+    for name in names:
+        bouts[name] = {'start': [], 'stop': []}
+        rast = list(np.where(np.array(labels) == name, 1, 0))
+        rast = [False] + rast + [False]
+        start = [i+1 for i,(a,b) in enumerate(zip(rast[1:],rast[:-1])) if (a and not b)]
+        stop  = [i for i,(a,b) in enumerate(zip(rast[:-1],rast[1:])) if (a and not b)]
+        bouts[name]['start'] = start
+        bouts[name]['stop'] = stop
+    return bouts
+
+
+def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['mount','attack','sniff'], gt=None):
+
+    # Convert labels to behavior bouts
+    bouts = list_to_bouts(labels)
+    # Open the file you want to write to.
+    fp = open(filename, 'w')
+    ch_list = ['classifier_output']
+    if gt is not None:
+        ch_list.append('ground_truth')
+        gt_bouts = list_to_bouts(gt)
+
+    #####################################################
+
+    # Write the header.
+    fp.write('Bento annotation file\n')
+    fp.write('Movie file(s):\n{}\n\n'.format(moviename))
+    fp.write('Stimulus name:\n')
+    fp.write('Annotation start frame: 1\n')
+    fp.write('Annotation stop frame: {}\n'.format(len(labels)))
+    fp.write('Annotation framerate: {}\n\n'.format(framerate))
+
+    fp.write('List of channels:\n')
+    fp.write('\n'.join(ch_list))
+    fp.write('\n\n')
+
+    fp.write('List of annotations:\n')
+    fp.write('\n'.join(beh_list))
+    fp.write('\n\n')
+
+    #####################################################
+    fp.write('{}----------\n'.format(ch_list[0]))
+    for beh in beh_list:
+        if beh in bouts.keys():
+            fp.write('>{}\n'.format(beh))
+            fp.write('Start\tStop\tDuration\n')
+            for start,stop in zip(bouts[beh]['start'],bouts[beh]['stop']):
+                fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
+            fp.write('\n')
+    fp.write('\n')
+
+    if gt is not None:
+        fp.write('{}----------\n'.format(ch_list[1]))
+        for beh in beh_list:
+            if beh in gt_bouts.keys():
+                fp.write('>{}\n'.format(beh))
+                fp.write('Start\tStop\tDuration\n')
+                for start,stop in zip(gt_bouts[beh]['start'],gt_bouts[beh]['stop']):
+                    fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
+                fp.write('\n')
+        fp.write('\n')
+
+    fp.close()
+    return
+
+
+def dump_proba(data_smooth, features, classifier_savename, fps=30):
+    sp.savemat(classifier_savename.replace('.txt', '.mat'),
+               {'data_smooth': np.expand_dims(data_smooth, axis=0), 'features': features, 'fps': fps})
+
+
+def dump_bento(video_fullpath, output_suffix='', pose_file = '', basepath = '', framerate=30):
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6
     if not output_suffix:
             # Default suffix is just the version number.
         output_suffix = mof.get_version_suffix()
@@ -509,7 +717,7 @@ def dump_bento(video_fullpath, output_suffix='', pose_file = '', basepath = ''):
     ws1.write(0, 1, 'Ca framerate:')  # B1
     ws1.write(0, 2, 0)  # C1
     ws1.write(0, 3, 'Annot framerate:')  # D1
-    ws1.write(0, 4, 30)  # E1
+    ws1.write(0, 4, framerate)  # E1
     ws1.write(0, 5, 'Multiple trials/Ca file:')  # F1
     ws1.write(0, 6, 0)  # G1
     ws1.write(0, 7, 'Multiple trails/annot file')  # H1
@@ -560,6 +768,9 @@ def dump_bento(video_fullpath, output_suffix='', pose_file = '', basepath = ''):
     bento_name = 'bento_' + output_suffix +'.xls'
     wb.save(os.path.join(output_folder,bento_name))
     return 1
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 5d248fb798220878c63a5bd22516e6a784d582b6

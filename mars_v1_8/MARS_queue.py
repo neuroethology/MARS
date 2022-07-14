@@ -168,6 +168,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         raise ValueError('ERROR: You must have a top-view camera to do feature extraction or behavior classification.')
                     send_update('   Extracting features from ' + top_fname + ' ... ', output_mode, gui_handle)
 
+                    classifier_path = mars_opts['classifier_model']
                     mfe.extract_features_wrapper(opts=mars_opts,
                                                  video_fullpath=fullpath_to_top,
                                                  progress_bar_sig=gui_handle.update_progbar_sig,
