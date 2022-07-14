@@ -382,6 +382,18 @@ def dump_bento_across_dir(root_path):
     return
 
 
+def get_mouse_number(video_fullpath):
+    # Assumes path is something like: path/to/Mouse[NUM]_(yadda_yadda.ext)
+    video_name = os.path.basename(video_fullpath)
+    mouse_name_and_number = video_name.split('_')[0]
+    mouse_num = mouse_name_and_number[5:]
+    if mouse_num == '':
+        mouse_num = 1
+    else:
+        mouse_num = int(mouse_num)
+    return mouse_num
+
+
 def get_normrel_path(path, start=''):
     return '/' + (os.path.relpath(path, start))
 
