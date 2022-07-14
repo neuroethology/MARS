@@ -3254,8 +3254,7 @@ def compute_windows_features(features, view, featToKeep, windows=[3, 11, 21], nu
     keepList = [range(np.shape(features)[2])]
     keepList.extend(featToKeep*(num_mice-1))
     features = np.concatenate([features[i, :, ind].transpose() for i, ind in zip(range(num_mice), keepList)], axis=1)
-    feats_name = np.concatenate([[str(i) + '_' + f for f in feats_name(inds,)]
-                                 for i, inds in zip(range(num_mice, keepList))]).tolist()
+    feats_name = np.concatenate([[str(i) + '_' + f for f in feats_name] for i, inds in zip(range(num_mice), keepList)]).tolist()
 
     data_win = compute_JAABA_feats(features, windows)
     feats_wnd_names = []
@@ -3329,25 +3328,25 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                     np.savez(feat_basename, **feat)
                     sp.savemat(feat_basename + '.mat',  feat)
 
+                    # do windowing, if we're using old-style MARS features (in newer version we wait til classification time to window)
                     n_feat = feat['data_smooth'].shape[2]
-                    if feature_type == 'custom':
-                        featToKeep = tuple(flatten([range(n_feat)]))
-                        windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in clf['params']['windows']]
-                        view = 'custom'
-                    elif feature_type == 'raw_pcf':
+                    if feature_type == 'raw_pcf':
                         featToKeep = tuple(flatten([range(39), range(50, 66), 67, 69, 70, 71, range(121, n_feat)]))
                         windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in [0.033333, 0.16667, 0.33333]]
                         view = feature_view + '_pcf'
+                        feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
+                        np.savez(feat_basename + "_wnd", **feat_wnd)
+                        sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
                     elif feature_type == 'raw':
                         featToKeep = tuple(flatten([range(39), range(42, 58), 59, 61, 62, 63, range(113, n_feat)]))
                         windows = [int(np.ceil(w * opts['framerate'])*2+1) for w in [0.033333, 0.16667, 0.33333]]
                         view = feature_view
-                    else:
+                        feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
+                        np.savez(feat_basename + "_wnd", **feat_wnd)
+                        sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
+                    elif feature_type != 'custom':
                         raise ValueError("feature type " + feature_type + "not recognized")
 
-                    feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
-                    np.savez(feat_basename + "_wnd", **feat_wnd)
-                    sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
 
                 dt = (time.time() - t) / 60.
                 print('[DONE] feature extraction in %5.2f mins' % (dt))

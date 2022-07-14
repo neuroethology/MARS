@@ -8,6 +8,7 @@ import MARS_create_video as mcv
 import numpy as np
 import yaml
 import time
+import cv2
 
 
 class dummyGui():
@@ -125,6 +126,10 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
             try:
                 fullpath_to_top = trial['top']
                 fullpath_to_front = trial['front']
+
+                if mars_opts['framerate'] == -1:
+                    with cv2.VideoCapture(fullpath_to_top) as cam:
+                        mars_opts['framerate'] = cam.get(cv2.CAP_PROP_FPS)
 
                 top_fname = os.path.basename(fullpath_to_top)
                 front_fname = os.path.basename(fullpath_to_front)
