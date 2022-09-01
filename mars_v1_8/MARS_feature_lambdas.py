@@ -30,7 +30,7 @@ def generate_lambdas():
     lam['xy_ang']['ori_body'] = lambda x, y: get_angle(x[6], y[6], x[3], y[3])
     lam['xy_ang']['angle_head_body_l'] = lambda x, y: interior_angle([x[2], y[2]], [x[3], y[3]], [x[5], y[5]])
     lam['xy_ang']['angle_head_body_r'] = lambda x, y: interior_angle([x[1], y[1]], [x[3], y[3]], [x[4], y[4]])
-    lam['xy_ang']['angle_nose_neck_tail'] = lambda x, y: interior_angle([x[0], y[0]], [x[3], y[3]], [x[6], y[6]])
+    lam['xy_ang']['angle_nose_neck_tail'] = lambda x, y: interior_angle_orth([x[0], y[0]], [x[3], y[3]], [x[6], y[6]])
 
     # add sines and cosines of angle features
     for k in list(lam['xy_ang'].keys()):
@@ -190,6 +190,18 @@ def interior_angle(p0, p1, p2):
     v0 = np.array(p0) - np.array(p1)
     v1 = np.array(p2) - np.array(p1)
     ang = mh.atan2(np.linalg.det([v0, v1]), np.dot(v0, v1))
+    return ang
+
+
+def interior_angle_orth(p0, p1, p2):
+    # def unit_vector(v):
+    #     return v/np.linalg.norm(v)
+    v0 = np.array(p0) - np.array(p1)
+    v1 = np.array(p2) - np.array(p1)
+    ang = -mh.atan2(np.dot(v0, v1), np.linalg.det([v0, v1])) # flip X/Y. use this if your angles are hovering around pi to reduce flippage
+    ang = ang if ang>0 else 2*mh.pi+ang
+    ang = -(ang - mh.pi/2) + mh.pi
+    ang = ang if ang<=2*mh.pi else ang-(2*mh.pi)
     return ang
 
 
