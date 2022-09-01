@@ -3,15 +3,12 @@ import numpy as np
 import scipy.io as sp
 import os
 import sys
-import dill
 import cv2
 from collections.abc import Iterable
 import scipy.spatial.distance as dist
 import scipy.signal as sig
-import math as mh
 from skimage.transform import resize as rs
 import warnings
-from itertools import zip_longest
 import csv
 import json
 import cmath as cmh
@@ -28,6 +25,7 @@ sys.path.append('./')
 from util.genericVideo import *
 from MARS_feature_machinery import *
 import MARS_output_format as mof
+import MARS_feature_lambdas as mars_lambdas
 
 
 flatten = lambda *n: (e for a in n for e in (flatten(*a) if isinstance(a, Iterable) else (a,)))
@@ -51,6 +49,9 @@ def generate_valid_feature_list(cfg):
                          'left_front_paw', 'right_front_paw', 'left_rear_paw', 'right_rear_paw']}
     inferred_parts = ['centroid', 'centroid_head', 'centroid_body']
 
+    lam = mars_lambdas.generate_lambdas()
+    have_lambdas = [k for f in lam.keys() for k in lam[f].keys()]
+
     feats = {}
     for cam in cameras:
         pairmice = copy.deepcopy(mice)
@@ -59,15 +60,17 @@ def generate_valid_feature_list(cfg):
             feats[cam][mouse] = {}
             feats[cam][mouse]['absolute_orientation'] = ['phi', 'ori_head', 'ori_body']
             feats[cam][mouse]['joint_angle'] = ['angle_head_body_l', 'angle_head_body_r']
+            feats[cam][mouse]['joint_angle_trig'] = ['sin_angle_head_body_l', 'cos_angle_head_body_l', 'sin_angle_head_body_r', 'cos_angle_head_body_r']
             feats[cam][mouse]['fit_ellipse'] = ['major_axis_len', 'minor_axis_len', 'axis_ratio', 'area_ellipse']
             feats[cam][mouse]['distance_to_walls'] = ['dist_edge_x', 'dist_edge_y', 'dist_edge']
-            feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd', 'radial_vel', 'tangential_vel']
+            feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd']
             feats[cam][mouse]['acceleration'] = ['acceleration_head', 'acceleration_body', 'acceleration_centroid']
 
         pairmice.remove(mouse)
         for mouse2 in pairmice:
             feats[cam][mouse+mouse2] = {}
             feats[cam][mouse+mouse2]['social_angle'] = ['angle_between', 'facing_angle', 'angle_social']
+            feats[cam][mouse + mouse2]['social_angle_trig'] = ['sin_angle_between', 'cos_angle_between', 'sin_facing_angle', 'cos_facing_angle', 'sin_angle_social', 'cos_angle_social']
             feats[cam][mouse+mouse2]['relative_size'] = ['area_ellipse_ratio']
             feats[cam][mouse+mouse2]['social_distance'] = ['dist_centroid', 'dist_nose', 'dist_head', 'dist_body',
                                                    'dist_head_body', 'dist_gap', 'dist_scaled', 'overlap_bboxes']
@@ -79,6 +82,12 @@ def generate_valid_feature_list(cfg):
             feats[cam][mouse]['intramouse_distance'] = [('dist_' + p + '_' + q) for p in parts for q in parts if q != p]
         for mouse2 in pairmice:
             feats[cam][mouse+mouse2]['intermouse_distance'] = [('dist_m1' + p + '_m2' + q) for p in parts for q in parts]
+
+    # make sure we have a lambda for each named feature
+    for cam in cameras:
+        for mouse in feats[cam].keys():
+            for grp in feats[cam][mouse].keys():
+                feats[cam][mouse][grp] = [f for f in feats[cam][mouse][grp] if f in have_lambdas]
 
     return feats
 
@@ -104,109 +113,12 @@ def list_features(project):
         print(' ')
 
 
-def generate_lambdas():
-    # define the lambdas for all the features, grouped by their required inputs.
-    # all function definitions are in MARS_feature_machinery.
-    # units for all lambdas are in pixels and frames. These must be converted to mouselengths and seconds
-    # by the extract_features function.
-
-    eps = np.spacing(1)
-    parts_list = ['nose', 'right_ear', 'left_ear', 'neck', 'right_side', 'left_side', 'tail_base', 'left_front_paw',
-                   'right_front_paw', 'left_rear_paw', 'right_rear_paw']
-
-    # lambdas are grouped by what kind of input they take. not very intuitive naming, this is supposed
-    # to be behind the scenes. if you want to play with which features you compute, modify the groups
-    # in generate_feature_list, above.
-    lam = {'ell_ang': {}, 'ell': {}, 'ell_area': {}, 'xy_ang': {}, 'xy': {}, 'xybd': {}, 'dt': {}, '2mdt': {},
-           'd2t': {}, 'xyxy_ang': {}, 'xyxy': {}, 'bb': {}}
-
-    # features based on a fit ellipse ###################################################
-    lam['ell_ang']['phi'] = lambda ell: ell['phi']
-    lam['ell']['major_axis_len'] = lambda ell: ell['ra'] if ell['ra'] > 0. else eps
-    lam['ell']['minor_axis_len'] = lambda ell: ell['rb'] if ell['rb'] > 0. else eps
-    lam['ell_ang']['axis_ratio'] = lambda ell: ell['ra'] / ell['rb'] if ell['rb'] > 0. else eps
-    lam['ell_area']['area_ellipse'] = lambda ell: mh.pi * ell['ra'] * ell['rb'] if ell['ra'] * ell['rb'] > 0. else eps
-
-    # features based on the location of one mouse #######################################
-    lam['xy_ang']['ori_head'] = lambda x, y: get_angle(x[3], y[3], x[0], y[0])
-    lam['xy_ang']['ori_body'] = lambda x, y: get_angle(x[6], y[6], x[3], y[3])
-    lam['xy_ang']['angle_head_body_l'] = lambda x, y: interior_angle([x[2], y[2]], [x[3], y[3]], [x[5], y[5]])
-    lam['xy_ang']['angle_head_body_r'] = lambda x, y: interior_angle([x[1], y[1]], [x[3], y[3]], [x[4], y[4]])
-    lam['xy']['centroid_x'] = lambda x, y: np.mean(x)
-    lam['xy']['centroid_y'] = lambda x, y: np.mean(y)
-    lam['xy']['centroid_head_x'] = lambda x, y: np.mean(x[:3])
-    lam['xy']['centroid_head_y'] = lambda x, y: np.mean(y[:3])
-    lam['xy']['centroid_body_x'] = lambda x, y: np.mean(x[4:])
-    lam['xy']['centroid_body_y'] = lambda x, y: np.mean(y[4:])
-    for i, p1 in enumerate(parts_list):
-        for j, p2 in enumerate(parts_list):
-            if p1 != p2:
-                lam['xy']['dist_' + p1 + '_' + p2] = lambda x, y, ind1=i, ind2=j: \
-                                                            np.linalg.norm([x[ind1] - x[ind2], y[ind1] - y[ind2]])
-    for i, part in enumerate(parts_list):
-        lam['xy'][part + '_x'] = lambda x, y, ind=i: x[ind]
-        lam['xy'][part + '_y'] = lambda x, y, ind=i: y[ind]
-
-    # features based on position w.r.t. arena ###########################################
-    lam['xybd']['dist_edge_x'] = lambda x, y, xlims, ylims:\
-        np.amin(np.stack((np.maximum(0, lam['xy']['centroid_x'](x, y) - xlims[0]),
-                          np.maximum(0, xlims[1] - lam['xy']['centroid_x'](x, y))), axis=-1), axis=0)
-    lam['xybd']['dist_edge_y'] = lambda x, y, xlims, ylims: \
-        np.amin(np.stack((np.maximum(0, lam['xy']['centroid_y'](x, y) - ylims[0]),
-                          np.maximum(0, ylims[1] - lam['xy']['centroid_y'](x, y))), axis=-1), axis=0)
-    lam['xybd']['dist_edge'] = lambda x, y, xlims, ylims:\
-        np.amin(np.stack((lam['xybd']['dist_edge_x'](x, y, xlims, ylims),
-                          lam['xybd']['dist_edge_y'](x, y, xlims, ylims)), axis=-1), axis=0)
-
-    # velocity features #################################################################
-    # question: should we instead estimate velocities with a kalman filter, to reduce noise?
-    lam['dt']['speed'] = lambda xt1, yt1, xt2, yt2: speed_head_hips(lam, xt1, yt1, xt2, yt2)
-    lam['dt']['speed_centroid'] = lambda xt1, yt1, xt2, yt2: speed_centroid(lam, xt1, yt1, xt2, yt2)
-    lam['dt']['speed_fwd'] = lambda xt1, yt1, xt2, yt2: speed_fwd(lam, xt1, yt1, xt2, yt2)
-    # going to omit the windowed [('speed_centroid_' + w) for w in ['w2', 'w5', 'w10']],
-    # as these are too sensitive to changes in imaging framerate
-
-    # social velocity features ##########################################################
-    lam['2mdt']['radial_vel'] = lambda xt2, yt2, xt1, yt1, x2, y2: radial_vel(lam, xt2, yt2, xt1, yt1, x2, y2)
-    lam['2mdt']['tangential_vel'] = lambda xt2, yt2, xt1, yt1, x2, y2: tangential_vel(lam, xt2, yt2, xt1, yt1, x2, y2)
-
-    # acceleration features #############################################################
-    lam['d2t']['acceleration_head'] = lambda x2, y2, x1, y1, x0, y0: acceleration_head(lam, x2, y2, x1, y1, x0, y0)
-    lam['d2t']['acceleration_body'] = lambda x2, y2, x1, y1, x0, y0: acceleration_body(lam, x2, y2, x1, y1, x0, y0)
-    lam['d2t']['acceleration_centroid'] = lambda x2, y2, x1, y1, x0, y0: acceleration_ctr(lam, x2, y2, x1, y1, x0, y0)
-
-    # features based on the locations of both mice ######################################
-    lam['xyxy_ang']['facing_angle'] = lambda x1, y1, x2, y2: facing_angle(lam, x1, y1, x2, y2)
-    lam['xyxy_ang']['angle_between'] = lambda x1, y1, x2, y2: angle_between(lam, x1, y1, x2, y2)
-    lam['xyxy_ang']['angle_social'] = lambda x1, y1, x2, y2: soc_angle(lam, x1, y1, x2, y2)
-
-    lam['xyxy']['dist_nose'] = lambda x1, y1, x2, y2: dist_nose(lam, x1, y1, x2, y2)
-    lam['xyxy']['dist_body'] = lambda x1, y1, x2, y2: dist_body(lam, x1, y1, x2, y2)
-    lam['xyxy']['dist_head'] = lambda x1, y1, x2, y2: dist_head(lam, x1, y1, x2, y2)
-    lam['xyxy']['dist_centroid'] = lambda x1, y1, x2, y2: dist_centroid(lam, x1, y1, x2, y2)
-    lam['xyxy']['dist_head_body'] = lambda x1, y1, x2, y2: dist_head_body(lam, x1, y1, x2, y2)
-    lam['xyxy']['dist_gap'] = lambda x1, y1, x2, y2: dist_gap(lam, x1, y1, x2, y2)
-    lam['xyxy_ang']['area_ellipse_ratio'] = lambda x1, y1, x2, y2: \
-        lam['ell_area']['area_ellipse'](fit_ellipse(x1, y1))/lam['ell_area']['area_ellipse'](fit_ellipse(x2, y2))
-
-    for i, p1 in enumerate(parts_list):
-        for j, p2 in enumerate(parts_list):
-            lam['xyxy']['dist_m1' + p1 + '_m2' + p2] = \
-                lambda x1, y1, x2, y2, ind1=i, ind2=j: np.linalg.norm([x1[ind1] - x2[ind2], y1[ind1] - y2[ind2]])
-
-    # features based on the bounding boxes ##############################################
-    lam['bb']['overlap_bboxes'] = lambda box1, box2: bb_intersection_over_union(box1, box2)
-
-    return lam
-
-
 def flatten_feats(feats, use_grps=[], use_cams=[], use_mice=[]):
     features = []
     for cam in use_cams:
         for mouse in use_mice:
-            for feat_class in use_grps:
-                if feat_class in feats[cam][mouse].keys():
-                    features = features + ["_".join((cam, mouse, s)) for s in feats[cam][mouse][feat_class]]
+            for feat_class in use_grps:  # feats[cam][mouse].keys():
+                features = features + ["_".join((cam, mouse, s)) for s in feats[cam][mouse][feat_class]]
 
     return features
 
@@ -292,7 +204,7 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
     partorder = [nose, right_ear, left_ear, neck, right_side, left_side, tail]
 
     feats = generate_valid_feature_list(cfg)
-    lam = generate_lambdas()
+    lam = mars_lambdas.generate_lambdas()
     if not use_grps:
         use_grps = []
         for mouse in mouse_list:
@@ -3325,16 +3237,6 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
         feat_from_all_behaviors = {'features': [], 'data_smooth': False, 'bbox': False, 'keypoints': False, 'fps': []}
         featFlag = False
 
-        all_windows = []
-        for behavior in feat_basename_dict.keys():  # figure out all the windows we'll need
-            model_name = mof.get_most_recent(opts['classifier_model'], clf_models, behavior)
-            clf = joblib.load(os.path.join(opts['classifier_model'], model_name))
-            if feat_basename_dict[behavior]['feature_type'] == 'custom':
-                all_windows += [int(np.ceil(w * opts['framerate']) * 2 + 1) for w in clf['params']['windows']]
-            else:
-                all_windows = [int(np.ceil(w * opts['framerate']) * 2 + 1) for w in [0.033333, 0.16667, 0.33333]]
-        all_windows = list(set(all_windows))
-
         for behavior in feat_basename_dict.keys():
             feat_basename = feat_basename_dict[behavior]['path']
             feature_type = feat_basename_dict[behavior]['feature_type']
@@ -3358,7 +3260,7 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
                         if not doOverwrite:
                             continue
                 features_to_add = [f for f in feature_names if f not in feature_types_extracted]
-                grps_to_add = list(set([g for m in mouse_list for g in list(all_feats[feature_view][m].keys()) for f in features_to_add if f.replace(feature_view+'_','').replace(m+'_','') in all_feats[feature_view][m][g]]))
+                grps_to_add = list(set([g for m in mouse_list for g in list(all_feats[feature_view][m].keys()) for f in features_to_add if f.replace(feature_view+'_', '').replace(m+'_', '') in all_feats[feature_view][m][g]]))
                 feature_types_extracted += features_to_add
                 feature_types_extracted = list(set(feature_types_extracted))
                 if not grps_to_add:

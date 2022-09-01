@@ -202,9 +202,14 @@ def predict_labels(opts, classifier_path, top_feat_filenames, front_feat_names, 
                                                                         front_feat_names=front_feat_names,
                                                                         behaviors=behaviors)
     print("assigning labels")
-    labels, labels_iteraction = assign_labels(all_predicted_probabilities=all_predicted_probabilities,
-                           behaviors_used=behaviors_used)
-    return labels, labels_iteraction, all_predicted_probabilities[:, :, 1], behaviors_used
+    if opts['multichannelAnnotations']:
+        labels_dict = assign_labels_multichannel(all_predicted_probabilities=all_predicted_probabilities,
+                                                 behaviors_used=behaviors_used)
+    else:
+        labels, labels_iteraction = assign_labels(all_predicted_probabilities=all_predicted_probabilities,
+                                                  behaviors_used=behaviors_used)
+        labels_dict = {'predicted_behaviors': labels}  #, 'interaction': labels_iteraction}  # labels_interaction is currently unused
+    return labels_dict, all_predicted_probabilities[:, :, 1], behaviors_used
 
 
 def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_names=[], behaviors=[], VERBOSE=True):
@@ -307,6 +312,19 @@ def predict_probabilities(opts, classifier_path, top_feat_filenames, front_feat_
         all_predicted_probabilities = np.array(proba_fbs_hmm).transpose(1, 0, 2)
         return all_predicted_probabilities, behaviors_used
 
+
+def assign_labels_multichannel(all_predicted_probabilities, behaviors_used):
+    labels = dict(zip(behaviors_used, []*len(behaviors_used)))
+    pdb.set_trace()
+    num_frames = all_predicted_probabilities.shape[0]
+    for i in range(num_frames):
+        current_prediction_probabilities = all_predicted_probabilities[i,:]
+        binarized_predictions = np.argmax(current_prediction_probabilities, axis=1)
+
+        for ii, val in enumerate(binarized_predictions):
+            labels[behaviors_used[ii]] += [behaviors_used[i] if val else 'other']
+
+    return labels
 
 def assign_labels(all_predicted_probabilities, behaviors_used):
     ''' Assigns labels based on the provided probabilities.'''
@@ -465,10 +483,18 @@ def string_to_bouts(textlist):  # a helper for the bento save format
     return bouts
 
 
-def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['mount','attack','sniff']):
-    # Convert labels to behavior bouts
-    bouts = string_to_bouts(labels)
-    ch_list = ['classifier_output']
+def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=None):
+
+    # get all channel names
+    ch_list = list(labels.keys())
+
+    # get all behaviors in all channels
+    if not beh_list:
+        beh_list = []
+        for ch in ch_list:
+            beh_list.append(list(set(labels[ch])))
+        beh_list = list(set(beh_list))
+        beh_list.remove('other')
 
     # Open the file you want to write to.
     with open(filename, 'w') as fp:
@@ -477,7 +503,7 @@ def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['m
         fp.write('Movie file(s):\n{}\n\n'.format(moviename))
         fp.write('Stimulus name:\n')
         fp.write('Annotation start frame: 1\n')
-        fp.write('Annotation stop frame: {}\n'.format(len(labels)))
+        fp.write('Annotation stop frame: {}\n'.format(len( labels[ch_list[0]] )))
         fp.write('Annotation framerate: {}\n\n'.format(framerate))
 
         fp.write('List of channels:\n')
@@ -489,15 +515,17 @@ def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['m
         fp.write('\n\n')
 
         #####################################################
-        fp.write('{}----------\n'.format(ch_list[0]))
-        for beh in beh_list:
-            if beh in bouts.keys():
-                fp.write('>{}\n'.format(beh))
-                fp.write('Start\tStop\tDuration\n')
-                for start,stop in zip(bouts[beh]['start'],bouts[beh]['stop']):
-                    fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
-                fp.write('\n')
-        fp.write('\n')
+        for ch in ch_list:
+            fp.write('{}----------\n'.format(ch))
+            bouts = string_to_bouts(labels[ch])
+            for beh in bouts.keys():
+                if beh in beh_list:
+                    fp.write('>{}\n'.format(beh))
+                    fp.write('Start\tStop\tDuration\n')
+                    for start, stop in zip(bouts[beh]['start'], bouts[beh]['stop']):
+                        fp.write('{}\t{}\t{}\t\n'.format(start, stop, stop-start+1))
+                    fp.write('\n')
+            fp.write('\n')
     return
 
 

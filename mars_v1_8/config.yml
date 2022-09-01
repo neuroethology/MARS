@@ -20,6 +20,10 @@ doPose: False
 doFeats: True
 doActions: True
 
+# setting multichannelAnotations to true will output predictions of each binary classifier to a separate annotation
+# channel, allowing frames to potentially be labeled positive for more than one behavior.
+multichannelAnnotations: True
+
 # enable to have MARS save a video of the resulting pose estimation
 doVideo: False
 

@@ -178,13 +178,12 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
 
 
 def get_clf_type(classifier_path):
-    model_type = 'xgb' if 'xgb' in classifier_path else 'mlp'
     if 'topfront' in classifier_path:
-        model_type += '_topfront'
+        model_type = 'topfront'
     elif 'top_pcf' in classifier_path:
-        model_type += '_top_pcf'
+        model_type = 'top_pcf'
     else:
-        model_type += '_top'
+        model_type = 'top'
     model_type += '_wnd' if 'wnd' in classifier_path else ''
     return model_type
 
