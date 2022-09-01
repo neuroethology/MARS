@@ -15,7 +15,8 @@ def generate_lambdas():
     # to be behind the scenes. if you want to play with which features you compute, modify the groups
     # in generate_feature_list.
     lam = {'ell_ang': {}, 'ell': {}, 'ell_area': {}, 'xy_ang': {}, 'xy': {}, 'xybd': {}, 'dt': {}, '2mdt': {},
-           'd2t': {}, 'xyxy_ang': {}, 'xyxy': {}, 'bb': {}, 'video': {}, 'bb_video': {}}
+           'd2t': {}, 'xyxy_ang': {}, 'xyxy': {}, 'bb': {}, 'video': {}, 'bb_video': {}, 'xy_ang_trig': {},
+           'xyxy_ang_trig': {}}
 
     # features based on a fit ellipse ###################################################
     lam['ell_ang']['phi'] = lambda ell: ell['phi']
