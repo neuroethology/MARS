@@ -1,4 +1,4 @@
-from __future__ import print_function,division
+from __future__ import print_function, division
 import numpy as np
 import scipy.io as sp
 import os
@@ -12,12 +12,22 @@ import warnings
 import csv
 import json
 import cmath as cmh
+import math as mh
 import scipy.io as sio
 import numpy.core.records as npc
 import joblib
 import yaml
 import copy
 import progressbar
+from util.genericVideo import *
+
+def load_pose(pose_fullpath):
+    try:
+        with open(pose_fullpath, 'r') as fp:
+            pose = json.load(fp)
+        return pose
+    except Exception as e:
+        raise e
 
 
 def classic_extract_features_top(top_video_fullpath,top_pose_fullpath, progress_bar_sig='', max_frames=-1):
@@ -1588,7 +1598,7 @@ def classic_extract_features_top_pcf(top_video_fullpath, front_video_fullpath, t
             #################################################################  position features
 
             # fit ellipse
-            ell = mafit_ellipse(xm1, ym1)
+            ell = fit_ellipse(xm1, ym1)
             cx1 = ell['cx']
             cy1 = ell['cy']
             ra1 = ell['ra']

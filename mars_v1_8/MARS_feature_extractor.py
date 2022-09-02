@@ -22,7 +22,6 @@ import pdb
 
 warnings.filterwarnings('ignore')
 sys.path.append('./')
-from util.genericVideo import *
 from MARS_feature_machinery import *
 import MARS_output_format as mof
 import MARS_feature_lambdas as mars_lambdas
@@ -40,64 +39,11 @@ def load_pose(pose_fullpath):
         raise e
 
 
-def generate_valid_feature_list(cfg):
-    num_mice = len(cfg['animal_names']) * cfg['num_obj']
-    mice = ['m'+str(i) for i in range(num_mice)]
-    # TODO: multi-camera support
-    # TODO: replace hard-coded feature names with keypoints from the project config file.
-    cameras = {'top':   ['nose', 'right_ear', 'left_ear', 'neck', 'right_side', 'left_side', 'tail_base'],
-               'front': ['nose', 'right_ear', 'left_ear', 'neck', 'right_side', 'left_side', 'tail_base',
-                         'left_front_paw', 'right_front_paw', 'left_rear_paw', 'right_rear_paw']}
-    inferred_parts = ['centroid', 'centroid_head', 'centroid_body']
-
-    lam = mars_lambdas.generate_lambdas()
-    have_lambdas = [k for f in lam.keys() for k in lam[f].keys()]
-
-    feats = {}
-    for cam in cameras:
-        pairmice = copy.deepcopy(mice)
-        feats[cam] = {}
-        for mouse in mice:
-            feats[cam][mouse] = {}
-            feats[cam][mouse]['absolute_orientation'] = ['phi', 'ori_head', 'ori_body']
-            feats[cam][mouse]['joint_angle'] = ['angle_head_body_l', 'angle_head_body_r', 'angle_nose_neck_tail']
-            feats[cam][mouse]['joint_angle_trig'] = ['sin_angle_head_body_l', 'cos_angle_head_body_l', 'sin_angle_head_body_r', 'cos_angle_head_body_r']
-            feats[cam][mouse]['fit_ellipse'] = ['major_axis_len', 'minor_axis_len', 'axis_ratio', 'area_ellipse']
-            feats[cam][mouse]['distance_to_walls'] = ['dist_edge_x', 'dist_edge_y', 'dist_edge']
-            feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd']
-            feats[cam][mouse]['acceleration'] = ['acceleration_head', 'acceleration_body', 'acceleration_centroid']
-
-        pairmice.remove(mouse)
-        for mouse2 in pairmice:
-            feats[cam][mouse+mouse2] = {}
-            feats[cam][mouse+mouse2]['social_angle'] = ['angle_between', 'facing_angle', 'angle_social']
-            feats[cam][mouse + mouse2]['social_angle_trig'] = ['sin_angle_between', 'cos_angle_between', 'sin_facing_angle', 'cos_facing_angle', 'sin_angle_social', 'cos_angle_social']
-            feats[cam][mouse+mouse2]['relative_size'] = ['area_ellipse_ratio']
-            feats[cam][mouse+mouse2]['social_distance'] = ['dist_centroid', 'dist_nose', 'dist_head', 'dist_body',
-                                                   'dist_head_body', 'dist_gap', 'dist_scaled', 'overlap_bboxes']
-
-    for cam, parts in zip(cameras.keys(), [cameras[i] for i in cameras.keys()]):
-        for mouse in mice:
-            feats[cam][mouse]['raw_coordinates'] = [(p + c) for p in parts for c in ['_x', '_y']]
-            [feats[cam][mouse]['raw_coordinates'].append(p + c) for p in inferred_parts for c in ['_x', '_y']]
-            feats[cam][mouse]['intramouse_distance'] = [('dist_' + p + '_' + q) for p in parts for q in parts if q != p]
-        for mouse2 in pairmice:
-            feats[cam][mouse+mouse2]['intermouse_distance'] = [('dist_m1' + p + '_m2' + q) for p in parts for q in parts]
-
-    # make sure we have a lambda for each named feature
-    for cam in cameras:
-        for mouse in feats[cam].keys():
-            for grp in feats[cam][mouse].keys():
-                feats[cam][mouse][grp] = [f for f in feats[cam][mouse][grp] if f in have_lambdas]
-
-    return feats
-
-
 def list_features(project):
     config_fid = os.path.join(project, 'project_config.yaml')
     with open(config_fid) as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
-    feats = generate_valid_feature_list(cfg)
+    feats = mars_lambdas.generate_valid_feature_list(cfg)
     print('The following feature categories are available:')
     for cam in feats.keys():
         for mouse in feats[cam].keys():
@@ -239,7 +185,7 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
     num_parts = 7  # for now we're just supporting the MARS-style keypoints
     partorder = [nose, right_ear, left_ear, neck, right_side, left_side, tail]
 
-    feats = generate_valid_feature_list(cfg)
+    feats = mars_lambdas.generate_valid_feature_list(cfg)
     lam = mars_lambdas.generate_lambdas()
     if not use_grps:
         use_grps = []
@@ -500,7 +446,7 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
             if feature_type == 'custom':
                 num_mice = len(cfg['animal_names']) * cfg['num_obj']
                 mouse_list = ['m' + str(i) for i in range(num_mice)]
-                all_feats = generate_valid_feature_list(cfg)
+                all_feats = mars_lambdas.generate_valid_feature_list(cfg)
                 feature_names = flatten_feats(all_feats, use_grps=use_grps, use_cams=[feature_view], use_mice=mouse_list)
 
                 if os.path.exists(feat_basename + '.npz'):  # we may have features in the right format already, but we have to make sure they contain everything we want for this behavior
