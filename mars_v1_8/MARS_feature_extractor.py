@@ -64,7 +64,8 @@ def flatten_feats(feats, use_grps=[], use_cams=[], use_mice=[]):
     features = []
     for cam in use_cams:
         for mouse in use_mice:
-            for feat_class in use_grps:  # feats[cam][mouse].keys():
+            grplist = use_grps if use_grps else feats[cam][mouse].keys()
+            for feat_class in grplist:  # feats[cam][mouse].keys():
                 features = features + ["_".join((cam, mouse, s)) for s in feats[cam][mouse][feat_class]]
 
     return features
@@ -173,17 +174,20 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
     if not mouse_list:
         mouse_list = ['m' + str(i) for i in range(num_mice)]
 
-    parts = cfg['keypoints']
-    nose       = [parts.index(i) for i in cfg['mars_name_matching']['nose']]
-    left_ear   = [parts.index(i) for i in cfg['mars_name_matching']['left_ear']]
-    right_ear  = [parts.index(i) for i in cfg['mars_name_matching']['right_ear']]
-    neck       = [parts.index(i) for i in cfg['mars_name_matching']['neck']]
-    left_side  = [parts.index(i) for i in cfg['mars_name_matching']['left_side']]
-    right_side = [parts.index(i) for i in cfg['mars_name_matching']['right_side']]
-    tail       = [parts.index(i) for i in cfg['mars_name_matching']['tail']]
-    # num_parts = len(parts)
-    num_parts = 7  # for now we're just supporting the MARS-style keypoints
-    partorder = [nose, right_ear, left_ear, neck, right_side, left_side, tail]
+    if 'keypoints' in cfg.keys():
+        parts = cfg['keypoints']
+        nose       = [parts.index(i) for i in cfg['mars_name_matching']['nose']]
+        left_ear   = [parts.index(i) for i in cfg['mars_name_matching']['left_ear']]
+        right_ear  = [parts.index(i) for i in cfg['mars_name_matching']['right_ear']]
+        neck       = [parts.index(i) for i in cfg['mars_name_matching']['neck']]
+        left_side  = [parts.index(i) for i in cfg['mars_name_matching']['left_side']]
+        right_side = [parts.index(i) for i in cfg['mars_name_matching']['right_side']]
+        tail       = [parts.index(i) for i in cfg['mars_name_matching']['tail']]
+        # num_parts = len(parts)
+        num_parts = 7  # for now we're just supporting the MARS-style keypoints
+        partorder = [nose, right_ear, left_ear, neck, right_side, left_side, tail]
+    else:
+        partorder = [i for i in range(7)]  # todo, make default behavior more sensible
 
     feats = mars_lambdas.generate_valid_feature_list(cfg)
     lam = mars_lambdas.generate_lambdas()
@@ -429,124 +433,127 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
     feat_basename_dict = mof.get_feat_no_ext(opts, video_fullpath=video_fullpath, view=feature_view, output_folder=output_folder, output_suffix=output_suffix)
     clf_models = mof.get_classifier_list(opts['classifier_model'])
     top_pose_fullpath = pose_basename + '.json'
-    try:
-        if not os.path.exists(top_pose_fullpath):
-            raise ValueError("No pose has been extracted for this video!")
+    # try:
+    if not os.path.exists(top_pose_fullpath):
+        raise ValueError("No pose has been extracted for this video!")
 
-        feature_types_extracted = []
-        feat_from_all_behaviors = {'features': [], 'data_smooth': False, 'bbox': False, 'keypoints': False, 'fps': []}
-        featFlag = False
+    feature_types_extracted = []
+    feat_from_all_behaviors = {'features': [], 'data_smooth': False, 'bbox': False, 'keypoints': False, 'fps': []}
+    featFlag = False
 
-        for behavior in feat_basename_dict.keys():
-            feat_basename = feat_basename_dict[behavior]['path']
-            feature_type = feat_basename_dict[behavior]['feature_type']
-            use_grps = feat_basename_dict[behavior]['feature_groups']
-            cfg = feat_basename_dict[behavior]['clf_config']
+    t = time.time()
+    for behavior in feat_basename_dict.keys():
+        feat_basename = feat_basename_dict[behavior]['path']
+        feature_type = feat_basename_dict[behavior]['feature_type']
+        use_grps = feat_basename_dict[behavior]['feature_groups']
+        cfg = feat_basename_dict[behavior]['clf_config']
 
-            if feature_type == 'custom':
-                num_mice = len(cfg['animal_names']) * cfg['num_obj']
-                mouse_list = ['m' + str(i) for i in range(num_mice)]
-                all_feats = mars_lambdas.generate_valid_feature_list(cfg)
-                feature_names = flatten_feats(all_feats, use_grps=use_grps, use_cams=[feature_view], use_mice=mouse_list)
+        if feature_type == 'custom':
+            num_mice = len(cfg['animal_names']) * cfg['num_obj']
+            mouse_list = ['m' + str(i) for i in range(num_mice)]
+            all_feats = mars_lambdas.generate_valid_feature_list(cfg)
+            feature_names = flatten_feats(all_feats, use_grps=use_grps, use_cams=[feature_view], use_mice=mouse_list)
 
-                if os.path.exists(feat_basename + '.npz'):  # we may have features in the right format already, but we have to make sure they contain everything we want for this behavior
-                    if not feature_types_extracted and not doOverwrite:  # we haven't extracted features this run, but we have some in a file from earlier, and we're not overwriting it.
-                        feat_from_all_behaviors = np.load(feat_basename + '.npz')
-                        existing_features = feat_from_all_behaviors['features']
-                        featFlag = True
-                        feature_types_extracted = existing_features.tolist()
-                    # check the feature types we've extracted so far:
-                    if all(f in feature_types_extracted for f in feature_names):
-                        if not doOverwrite:
-                            continue
-                features_to_add = [f for f in feature_names if f not in feature_types_extracted]
-                grps_to_add = list(set([g for m in mouse_list for g in list(all_feats[feature_view][m].keys()) for f in features_to_add if f.replace(feature_view+'_', '').replace(m+'_', '') in all_feats[feature_view][m][g]]))
-                feature_types_extracted += features_to_add
-                feature_types_extracted = list(set(feature_types_extracted))
-                if not grps_to_add:
-                    continue
+            if os.path.exists(feat_basename + '.npz'):  # we may have features in the right format already, but we have to make sure they contain everything we want for this behavior
+                if not feature_types_extracted and not doOverwrite:  # we haven't extracted features this run, but we have some in a file from earlier, and we're not overwriting it.
+                    feat_from_all_behaviors = np.load(feat_basename + '.npz')
+                    existing_features = feat_from_all_behaviors['features']
+                    featFlag = True
+                    feature_types_extracted = existing_features.tolist()
+                # check the feature types we've extracted so far:
+                if all(f in feature_types_extracted for f in feature_names):
+                    if not doOverwrite:
+                        continue
+            features_to_add = [f for f in feature_names if f not in feature_types_extracted]
+            grps_to_add = list(set([g for m in mouse_list for g in list(all_feats[feature_view][m].keys()) for f in features_to_add if f.replace(feature_view+'_', '').replace(m+'_', '') in all_feats[feature_view][m][g]]))
+            feature_types_extracted += features_to_add
+            feature_types_extracted = list(set(feature_types_extracted))
+            if not grps_to_add:
+                continue
 
-            if (not os.path.exists(feat_basename + '.npz')) | doOverwrite:
-                t = time.time()
+        if (not os.path.exists(feat_basename + '.npz')) | doOverwrite:
 
+            if behavior is 'DUMMY_PLUG':
+                clf = {'params': {'project_config': feat_basename_dict[behavior]['clf_config']}}
+            else:
                 model_name = mof.get_most_recent(opts['classifier_model'], clf_models, behavior)
                 clf = joblib.load(os.path.join(opts['classifier_model'], model_name))
-                opts['classifier_features'] = clf['params']  # pass along the settings for this classifier
 
-                if feature_type == 'custom':
-                    cfg = clf['params']['project_config']  # unpack the MARS_developer parent project config
-                    num_mice = len(cfg['animal_names']) * cfg['num_obj']
-                    feat = run_feature_extraction(top_pose_fullpath=top_pose_fullpath,
-                                                  opts=opts,
-                                                  progress_bar_sig=progress_bar_sig,
-                                                  max_frames=max_frames,
-                                                  features=grps_to_add)
-                    feat['features'] = feat_from_all_behaviors['features'] + feat['features']  # 'features' field reflects features in order added
-                    feat['data_smooth'] = np.concatenate((feat_from_all_behaviors['data_smooth'], feat['data_smooth']), axis=2) if featFlag else feat['data_smooth']
-                    feat_from_all_behaviors = copy.deepcopy(feat)
-                    featFlag = True
+            opts['classifier_features'] = clf['params']  # pass along the settings for this classifier
+            if feature_type == 'custom':
+                cfg = clf['params']['project_config']  # unpack the MARS_developer parent project config
+                num_mice = len(cfg['animal_names']) * cfg['num_obj']
+                feat = run_feature_extraction(top_pose_fullpath=top_pose_fullpath,
+                                              opts=opts,
+                                              progress_bar_sig=progress_bar_sig,
+                                              max_frames=max_frames,
+                                              features=grps_to_add)
+                feat['features'] = feat_from_all_behaviors['features'] + feat['features']  # 'features' field reflects features in order added
+                feat['data_smooth'] = np.concatenate((feat_from_all_behaviors['data_smooth'], feat['data_smooth']), axis=2) if featFlag else feat['data_smooth']
+                feat_from_all_behaviors = copy.deepcopy(feat)
+                featFlag = True
 
-                elif feature_type == 'raw_pcf':
-                    num_mice = 2
-                    feat = mlf.classic_extract_features_top_pcf(top_video_fullpath=video_fullpath,
-                                                            front_video_fullpath=front_video_fullpath,
-                                                            top_pose_fullpath=top_pose_fullpath,
-                                                            progress_bar_sig=progress_bar_sig,
-                                                            max_frames=max_frames)
-
-                elif feature_type == 'raw':
-                    num_mice = 2
-                    feat = mlf.classic_extract_features_top(top_video_fullpath=video_fullpath,
+            elif feature_type == 'raw_pcf':
+                num_mice = 2
+                feat = mlf.classic_extract_features_top_pcf(top_video_fullpath=video_fullpath,
+                                                        front_video_fullpath=front_video_fullpath,
                                                         top_pose_fullpath=top_pose_fullpath,
                                                         progress_bar_sig=progress_bar_sig,
                                                         max_frames=max_frames)
-                else:
+
+            elif feature_type == 'raw':
+                num_mice = 2
+                feat = mlf.classic_extract_features_top(top_video_fullpath=video_fullpath,
+                                                    top_pose_fullpath=top_pose_fullpath,
+                                                    progress_bar_sig=progress_bar_sig,
+                                                    max_frames=max_frames)
+            else:
+                raise ValueError("feature type " + feature_type + "not recognized")
+
+            if type(feat) is not dict:
+                raise ValueError('Feature extraction failed for behavior ' + behavior + ', feature type ' + feature_type)
+            else:
+                np.savez(feat_basename, **feat)
+                sp.savemat(feat_basename + '.mat',  feat)
+
+                # do windowing, if we're using old-style MARS features (in newer version we wait til classification time to window)
+                n_feat = feat['data_smooth'].shape[2]
+
+                if feature_type == 'custom':
+                    featToKeep = tuple(flatten([range(n_feat)]))
+                    view = 'custom'
+                elif feature_type == 'raw_pcf':
+                    featToKeep = tuple(flatten([range(39), range(50, 66), 67, 69, 70, 71, range(121, n_feat)]))
+                    view = feature_view + '_pcf'
+                    windows=[int(np.ceil(w * opts['framerate']) * 2 + 1) for w in [0.033333, 0.16667, 0.33333]]
+                    feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
+                    np.savez(feat_basename + "_wnd", **feat_wnd)
+                    sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
+                elif feature_type == 'raw':
+                    featToKeep = tuple(flatten([range(39), range(42, 58), 59, 61, 62, 63, range(113, n_feat)]))
+                    view = feature_view
+                    windows = [int(np.ceil(w * opts['framerate']) * 2 + 1) for w in [0.033333, 0.16667, 0.33333]]
+                    feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
+                    np.savez(feat_basename + "_wnd", **feat_wnd)
+                    sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
+                elif feature_type != 'custom':
                     raise ValueError("feature type " + feature_type + "not recognized")
 
-                if type(feat) is not dict:
-                    raise ValueError('Feature extraction failed for behavior ' + behavior + ', feature type ' + feature_type)
-                else:
-                    np.savez(feat_basename, **feat)
-                    sp.savemat(feat_basename + '.mat',  feat)
+        else:
+            print('2 - Features top already extracted')
 
-                    # do windowing, if we're using old-style MARS features (in newer version we wait til classification time to window)
-                    n_feat = feat['data_smooth'].shape[2]
-
-                    if feature_type == 'custom':
-                        featToKeep = tuple(flatten([range(n_feat)]))
-                        view = 'custom'
-                    elif feature_type == 'raw_pcf':
-                        featToKeep = tuple(flatten([range(39), range(50, 66), 67, 69, 70, 71, range(121, n_feat)]))
-                        view = feature_view + '_pcf'
-                        windows=[int(np.ceil(w * opts['framerate']) * 2 + 1) for w in [0.033333, 0.16667, 0.33333]]
-                        feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
-                        np.savez(feat_basename + "_wnd", **feat_wnd)
-                        sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
-                    elif feature_type == 'raw':
-                        featToKeep = tuple(flatten([range(39), range(42, 58), 59, 61, 62, 63, range(113, n_feat)]))
-                        view = feature_view
-                        windows = [int(np.ceil(w * opts['framerate']) * 2 + 1) for w in [0.033333, 0.16667, 0.33333]]
-                        feat_wnd = compute_windows_features(feat, view, featToKeep, windows=windows, num_mice=num_mice)
-                        np.savez(feat_basename + "_wnd", **feat_wnd)
-                        sp.savemat(feat_basename + '_wnd.mat', feat_wnd)
-                    elif feature_type != 'custom':
-                        raise ValueError("feature type " + feature_type + "not recognized")
-
-            else:
-                print('2 - Features top already extracted')
-
-        dt = (time.time() - t) / 60.
-        print('[DONE] feature extraction in %5.2f mins' % (dt))
-        return
-    except Exception as e:
-        import linecache
-        print("Error when extracting features (extract_top_features_wrapper):")
-        exc_type, exc_obj, tb = sys.exc_info()
-        f = tb.tb_frame
-        lineno = tb.tb_lineno
-        filename = f.f_code.co_filename
-        linecache.checkcache(filename)
-        line = linecache.getline(filename, lineno, f.f_globals)
-        print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
-        print(e)
-        return []
+    dt = (time.time() - t) / 60.
+    print('[DONE] feature extraction in %5.2f mins' % (dt))
+    return
+    # except Exception as e:
+    #     import linecache
+    #     print("Error when extracting features (extract_top_features_wrapper):")
+    #     exc_type, exc_obj, tb = sys.exc_info()
+    #     f = tb.tb_frame
+    #     lineno = tb.tb_lineno
+    #     filename = f.f_code.co_filename
+    #     linecache.checkcache(filename)
+    #     line = linecache.getline(filename, lineno, f.f_globals)
+    #     print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
+    #     print(e)
+    #     return []

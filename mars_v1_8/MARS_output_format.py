@@ -150,7 +150,21 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
     feat_basenames = {}
     classifier_path = opts['classifier_model']
     models = get_classifier_list(classifier_path)
+    if not opts['classify_behaviors']:
+        opts['classify_behaviors'] = ['DUMMY_PLUG']
+
     for behavior in opts['classify_behaviors']:  # figure out what kind of features we need for each classifier
+
+        if behavior is 'DUMMY_PLUG':  # there aren't any classifiers, let's just extract all custom features.
+            cfg = {'animal_names': ['undefined'],
+                   'num_obj': opts['num_mice'],
+                   'params': {}
+                   }
+            feature_type = 'custom'
+            feat_designator = '_'.join([feature_type, 'feat', view, output_suffix])
+            feat_basenames.update({'DUMMY_PLUG': {'path': output_plus_mouse + '_' + feat_designator, 'feature_type': 'custom', 'feature_groups': [], 'clf_config': cfg}})
+            # todo: add MARS config information that doesn't require a classifier to be loaded!
+            return feat_basenames
 
         model_name = get_most_recent(classifier_path, models, behavior)
         clf = joblib.load(os.path.join(classifier_path, model_name))

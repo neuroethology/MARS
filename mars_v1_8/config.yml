@@ -12,6 +12,7 @@ classifier_model: models/classifier/good_clf
 # information about your videos. Set framerate=-1 to get the framerate value from the video file.
 pixels_per_cm: 1
 framerate: 20
+num_mice: 1
 
 # which stages of analysis to run- pose estimation, feature extraction, and behavior classification
 # feature extraction is a required step if you wish to do behavior classification, and
