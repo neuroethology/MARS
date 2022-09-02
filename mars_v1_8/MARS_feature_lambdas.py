@@ -87,9 +87,20 @@ def generate_lambdas():
     lam['xy_ang']['angle_nose_neck_tail'] = lambda x, y: interior_angle_orth([x[0], y[0]], [x[3], y[3]], [x[6], y[6]])
 
     # add sines and cosines of angle features
-    for k in list(lam['xy_ang'].keys()):
-        lam['xy_ang_trig']['sin_' + k] = lambda x, y: np.sin(lam['xy_ang'][k](x, y))
-        lam['xy_ang_trig']['cos_' + k] = lambda x, y: np.cos(lam['xy_ang'][k](x, y))
+    # for k in list(lam['xy_ang'].keys()):
+    #     lam['xy_ang_trig']['sin_' + k] = lambda x, y: np.sin(lam['xy_ang'][k](x, y))
+    #     lam['xy_ang_trig']['cos_' + k] = lambda x, y: np.cos(lam['xy_ang'][k](x, y))
+    lam['xy_ang']['sin_ori_head'] = lambda x, y: np.sin(lam['xy_ang']['ori_head'](x, y))
+    lam['xy_ang']['cos_ori_head'] = lambda x, y: np.cos(lam['xy_ang']['ori_head'](x, y))
+    lam['xy_ang']['sin_ori_body'] = lambda x, y: np.sin(lam['xy_ang']['ori_body'](x, y))
+    lam['xy_ang']['cos_ori_body'] = lambda x, y: np.cos(lam['xy_ang']['ori_body'](x, y))
+    lam['xy_ang']['sin_angle_head_body_l'] = lambda x, y: np.sin(lam['xy_ang']['angle_head_body_l'](x, y))
+    lam['xy_ang']['cos_angle_head_body_l'] = lambda x, y: np.cos(lam['xy_ang']['angle_head_body_l'](x, y))
+    lam['xy_ang']['sin_angle_head_body_r'] = lambda x, y: np.sin(lam['xy_ang']['angle_head_body_r'](x, y))
+    lam['xy_ang']['cos_angle_head_body_r'] = lambda x, y: np.cos(lam['xy_ang']['angle_head_body_r'](x, y))
+    lam['xy_ang']['sin_angle_nose_neck_tail'] = lambda x, y: np.sin(lam['xy_ang']['angle_nose_neck_tail'](x, y))
+    lam['xy_ang']['cos_angle_nose_neck_tail'] = lambda x, y: np.cos(lam['xy_ang']['angle_nose_neck_tail'](x, y))
+
 
     lam['xy']['centroid_x'] = lambda x, y: np.mean(x)
     lam['xy']['centroid_y'] = lambda x, y: np.mean(y)
@@ -139,9 +150,15 @@ def generate_lambdas():
     lam['xyxy_ang']['angle_between'] = lambda x1, y1, x2, y2: angle_between(lam, x1, y1, x2, y2)
     lam['xyxy_ang']['angle_social'] = lambda x1, y1, x2, y2: soc_angle(lam, x1, y1, x2, y2)
 
-    for k in list(lam['xyxy_ang'].keys()):
-        lam['xyxy_ang_trig']['sin_' + k] = lambda x1, y1, x2, y2: np.sin(lam['xyxy_ang'][k](x1, y1, x2, y2))
-        lam['xyxy_ang_trig']['cos_' + k] = lambda x1, y1, x2, y2: np.cos(lam['xyxy_ang'][k](x1, y1, x2, y2))
+    # for k in list(lam['xyxy_ang'].keys()):
+    #     lam['xyxy_ang_trig']['sin_' + k] = lambda x1, y1, x2, y2: np.sin(lam['xyxy_ang'][k](x1, y1, x2, y2))
+    #     lam['xyxy_ang_trig']['cos_' + k] = lambda x1, y1, x2, y2: np.cos(lam['xyxy_ang'][k](x1, y1, x2, y2))
+    lam['xyxy_ang_trig']['sin_facing_angle'] = lambda x1, y1, x2, y2: np.sin(lam['xyxy_ang']['facing_angle'](x1, y1, x2, y2))
+    lam['xyxy_ang_trig']['cos_facing_angle'] = lambda x1, y1, x2, y2: np.cos(lam['xyxy_ang']['facing_angle'](x1, y1, x2, y2))
+    lam['xyxy_ang_trig']['sin_angle_between'] = lambda x1, y1, x2, y2: np.sin(lam['xyxy_ang']['angle_between'](x1, y1, x2, y2))
+    lam['xyxy_ang_trig']['cos_angle_between'] = lambda x1, y1, x2, y2: np.cos(lam['xyxy_ang']['angle_between'](x1, y1, x2, y2))
+    lam['xyxy_ang_trig']['sin_angle_social'] = lambda x1, y1, x2, y2: np.sin(lam['xyxy_ang']['angle_social'](x1, y1, x2, y2))
+    lam['xyxy_ang_trig']['cos_angle_social'] = lambda x1, y1, x2, y2: np.cos(lam['xyxy_ang']['angle_social'](x1, y1, x2, y2))
 
     lam['xyxy']['dist_nose'] = lambda x1, y1, x2, y2: dist_nose(lam, x1, y1, x2, y2)
     lam['xyxy']['dist_body'] = lambda x1, y1, x2, y2: dist_body(lam, x1, y1, x2, y2)
