@@ -379,6 +379,12 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
                     if featname in features:
                         track['data'][m, f, features.index(featname)] = lam['xybd'][feat](xa, ya, xlims, ylims) / dscale
 
+                # environment-based angle or ratio features. No unit conversion needed.
+                for feat in lam['xybd_ang'].keys():
+                    featname = "_".join((use_cam, mouse_list[m], feat))
+                    if featname in features:
+                        track['data'][m, f, features.index(featname)] = lam['xybd_ang'][feat](xa, ya, xlims, ylims)
+
         # TODO: we could apply smoothing here if we wanted.
         # track['features'] = features_ordered
         track['data_smooth'] = track['data']
