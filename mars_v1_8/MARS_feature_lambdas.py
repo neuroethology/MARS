@@ -68,7 +68,7 @@ def generate_lambdas():
     # lambdas are grouped by what kind of input they take. not very intuitive naming, this is supposed
     # to be behind the scenes. if you want to play with which features you compute, modify the groups
     # in generate_feature_list.
-    lam = {'ell_ang': {}, 'ell': {}, 'ell_area': {}, 'xy_ang': {}, 'xy': {}, 'xybd': {}, 'xybd_ang': {}, 'dt': {}, '2mdt': {},
+    lam = {'ell_ang': {}, 'ell': {}, 'ell_area': {}, 'xy_ang': {}, 'xy': {}, 'xybd': {}, 'xybd_ang':{}, 'dt': {}, '2mdt': {},
            'd2t': {}, 'xyxy_ang': {}, 'xyxy': {}, 'bb': {}, 'video': {}, 'bb_video': {}, 'xy_ang_trig': {},
            'xyxy_ang_trig': {}}
 
@@ -117,9 +117,12 @@ def generate_lambdas():
         lam['xy'][part + '_x'] = lambda x, y, ind=i: x[ind]
         lam['xy'][part + '_y'] = lambda x, y, ind=i: y[ind]
 
-    # features based on position w.r.t. arena ###########################################
-    lam['xybd']['dist_to_center'] = lambda x, y, xlims, ylims: np.linalg.norm([x[0] - (xlims[1] - xlims[0] / 2),
-                                                                               y[0] - (ylims[1] - ylims[0] / 2)])
+    # features based on position or angle w.r.t. arena ###########################################
+    lam['xybd']['angle_to_center'] = lambda x, y, xlims, ylims: interior_angle_orth([x[0], y[0]], [x[3], y[3]],
+                                                                                    [(xlims[1] - xlims[0]) / 2 + xlims[0],
+                                                                                     (ylims[1] - ylims[0]) / 2 + ylims[0]])
+    lam['xybd']['dist_to_center'] = lambda x, y, xlims, ylims: np.linalg.norm([x[0] - ((xlims[1] - xlims[0]) / 2 + xlims[0]),
+                                                                               y[0] - ((ylims[1] - ylims[0]) / 2 + ylims[0])])
     lam['xybd']['dist_edge_x'] = lambda x, y, xlims, ylims:\
         np.amin(np.stack((np.maximum(0, lam['xy']['centroid_x'](x, y) - xlims[0]),
                           np.maximum(0, xlims[1] - lam['xy']['centroid_x'](x, y))), axis=-1), axis=0)
@@ -129,11 +132,6 @@ def generate_lambdas():
     lam['xybd']['dist_edge'] = lambda x, y, xlims, ylims:\
         np.amin(np.stack((lam['xybd']['dist_edge_x'](x, y, xlims, ylims),
                           lam['xybd']['dist_edge_y'](x, y, xlims, ylims)), axis=-1), axis=0)
-
-    # features based on angle w.r.t. arena ###########################################
-    lam['xybd_ang']['angle_to_center'] = lambda x, y, xlims, ylims: interior_angle_orth([x[0], y[0]], [x[3], y[3]],
-                                                                                    [xlims[1] - xlims[0] / 2,
-                                                                                     ylims[1] - ylims[0] / 2])
 
     # velocity features #################################################################
     # question: should we instead estimate velocities with a kalman filter, to reduce noise?

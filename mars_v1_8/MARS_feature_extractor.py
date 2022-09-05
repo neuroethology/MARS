@@ -149,6 +149,27 @@ def get_mars_keypoints(keypoints, num_mice, partorder):
     return xm, ym
 
 
+def get_good_keypoints(keypoints, scores, num_mice, partorder, scorethresh=0.25):
+    xraw = []
+    yraw = []
+    scoreraw = []
+    for m in range(num_mice):
+        xraw.append(np.asarray(keypoints[m][0]))
+        yraw.append(np.asarray(keypoints[m][1]))
+        scoreraw.append(np.asarray(scores[m]))
+    xm = []
+    ym = []
+    for m in range(num_mice):
+        xm.append(np.array([]))
+        ym.append(np.array([]))
+        for part in partorder:
+            xval = np.mean(xraw[m][part]) if scoreraw[m][part] > scorethresh else -1
+            yval = np.mean(yraw[m][part]) if scoreraw[m][part] > scorethresh else -1
+            xm[m] = np.append(xm[m], xval)
+            ym[m] = np.append(ym[m], yval)
+    return xm, ym
+
+
 def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], features=[],
                            front_video_fullpath='', mouse_list=[], center_mouse=False, use_cam='top', max_frames=-1):
 
@@ -224,17 +245,18 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
         ally = []
         for f in range(num_frames):
             keypoints = frames_pose['keypoints'][f]
-            xm, ym = get_mars_keypoints(keypoints, num_mice, partorder)
+            scores = frames_pose['scores'][f]
+            xm, ym = get_good_keypoints(keypoints, scores, num_mice, partorder)
 
-            [allx.append(x) for x in np.ravel(xm)]
-            [ally.append(y) for y in np.ravel(ym)]
+            [allx.append(x) for x in np.ravel(xm) if x > -1]
+            [ally.append(y) for y in np.ravel(ym) if y > -1]
             mouse_length[f] = np.linalg.norm((xm[0][3] - xm[0][6], ym[0][3] - ym[0][6]))
 
         # estimate the extent of our arena from tracking data
         allx = np.asarray(allx)/dscale
         ally = np.asarray(ally)/dscale
-        xlims_0 = [np.percentile(allx, 1), np.percentile(allx, 99)]
-        ylims_0 = [np.percentile(ally, 1), np.percentile(ally, 99)]
+        xlims_0 = [np.percentile(allx, 0.01), np.percentile(allx, 99.99)]
+        ylims_0 = [np.percentile(ally, 0.01), np.percentile(ally, 99.99)]
         xm0 = [np.array([]) for i in range(num_mice)]
         ym0 = [np.array([]) for i in range(num_mice)]
         xm00 = [np.array([]) for i in range(num_mice)]
