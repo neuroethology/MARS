@@ -68,7 +68,7 @@ def generate_lambdas():
     # lambdas are grouped by what kind of input they take. not very intuitive naming, this is supposed
     # to be behind the scenes. if you want to play with which features you compute, modify the groups
     # in generate_feature_list.
-    lam = {'ell_ang': {}, 'ell': {}, 'ell_area': {}, 'xy_ang': {}, 'xy': {}, 'xybd': {}, 'dt': {}, '2mdt': {},
+    lam = {'ell_ang': {}, 'ell': {}, 'ell_area': {}, 'xy_ang': {}, 'xy': {}, 'xybd': {}, 'xybd_ang': {}, 'dt': {}, '2mdt': {},
            'd2t': {}, 'xyxy_ang': {}, 'xyxy': {}, 'bb': {}, 'video': {}, 'bb_video': {}, 'xy_ang_trig': {},
            'xyxy_ang_trig': {}}
 
