@@ -27,7 +27,7 @@ def generate_valid_feature_list(cfg):
                                                      'sin_angle_head_body_r', 'cos_angle_head_body_r',
                                                      'sin_angle_nose_neck_tail', 'cos_angle_nose_neck_tail']
             feats[cam][mouse]['fit_ellipse'] = ['major_axis_len', 'minor_axis_len', 'axis_ratio', 'area_ellipse']
-            feats[cam][mouse]['distance_to_walls'] = ['dist_edge_x', 'dist_edge_y', 'dist_edge']
+            feats[cam][mouse]['distance_to_walls'] = ['dist_edge_x', 'dist_edge_y', 'dist_edge', 'dist_to_center']
             feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd']
             feats[cam][mouse]['acceleration'] = ['acceleration_head', 'acceleration_body', 'acceleration_centroid']
 
