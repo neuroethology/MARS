@@ -255,8 +255,8 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
         # estimate the extent of our arena from tracking data
         allx = np.asarray(allx)/dscale
         ally = np.asarray(ally)/dscale
-        xlims_0 = [np.percentile(allx, 1), np.percentile(allx, 99)]
-        ylims_0 = [np.percentile(ally, 1), np.percentile(ally, 99)]
+        xlims_0 = [np.percentile(allx, 0.01), np.percentile(allx, 99.99)]
+        ylims_0 = [np.percentile(ally, 0.01), np.percentile(ally, 99.99)]
         xm0 = [np.array([]) for i in range(num_mice)]
         ym0 = [np.array([]) for i in range(num_mice)]
         xm00 = [np.array([]) for i in range(num_mice)]
