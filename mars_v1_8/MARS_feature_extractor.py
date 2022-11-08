@@ -256,7 +256,7 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
         allx = np.asarray(allx)/dscale
         ally = np.asarray(ally)/dscale
         xlims_0 = [np.percentile(allx, 0.01), np.percentile(allx, 99.99)]
-        ylims_0 = [np.percentile(ally, 0.01), np.percentile(ally, 99.99)]
+        ylims_0 = [np.percentile(ally, 1), np.percentile(ally, 99.99)]
         xm0 = [np.array([]) for i in range(num_mice)]
         ym0 = [np.array([]) for i in range(num_mice)]
         xm00 = [np.array([]) for i in range(num_mice)]
@@ -523,6 +523,9 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
             if feature_type == 'custom':
                 cfg = clf['params']['project_config']  # unpack the MARS_developer parent project config
                 num_mice = len(cfg['animal_names']) * cfg['num_obj']
+
+                grps_to_add = None  # remove this later!!!
+
                 feat = run_feature_extraction(top_pose_fullpath=top_pose_fullpath,
                                               opts=opts,
                                               progress_bar_sig=progress_bar_sig,

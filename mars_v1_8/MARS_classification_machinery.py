@@ -556,59 +556,59 @@ def list_to_bouts(labels):  # a helper for the bento save format
     return bouts
 
 
-def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['mount','attack','sniff'], gt=None):
-
-    # Convert labels to behavior bouts
-    bouts = list_to_bouts(labels)
-    # Open the file you want to write to.
-    fp = open(filename, 'w')
-    ch_list = ['classifier_output']
-    if gt is not None:
-        ch_list.append('ground_truth')
-        gt_bouts = list_to_bouts(gt)
-
-    #####################################################
-
-    # Write the header.
-    fp.write('Bento annotation file\n')
-    fp.write('Movie file(s):\n{}\n\n'.format(moviename))
-    fp.write('Stimulus name:\n')
-    fp.write('Annotation start frame: 1\n')
-    fp.write('Annotation stop frame: {}\n'.format(len(labels)))
-    fp.write('Annotation framerate: {}\n\n'.format(framerate))
-
-    fp.write('List of channels:\n')
-    fp.write('\n'.join(ch_list))
-    fp.write('\n\n')
-
-    fp.write('List of annotations:\n')
-    fp.write('\n'.join(beh_list))
-    fp.write('\n\n')
-
-    #####################################################
-    fp.write('{}----------\n'.format(ch_list[0]))
-    for beh in beh_list:
-        if beh in bouts.keys():
-            fp.write('>{}\n'.format(beh))
-            fp.write('Start\tStop\tDuration\n')
-            for start,stop in zip(bouts[beh]['start'],bouts[beh]['stop']):
-                fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
-            fp.write('\n')
-    fp.write('\n')
-
-    if gt is not None:
-        fp.write('{}----------\n'.format(ch_list[1]))
-        for beh in beh_list:
-            if beh in gt_bouts.keys():
-                fp.write('>{}\n'.format(beh))
-                fp.write('Start\tStop\tDuration\n')
-                for start,stop in zip(gt_bouts[beh]['start'],gt_bouts[beh]['stop']):
-                    fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
-                fp.write('\n')
-        fp.write('\n')
-
-    fp.close()
-    return
+# def dump_labels_bento(labels, filename, moviename='', framerate=30, beh_list=['mount','attack','sniff'], gt=None):
+#
+#     # Convert labels to behavior bouts
+#     bouts = list_to_bouts(labels)
+#     # Open the file you want to write to.
+#     fp = open(filename, 'w')
+#     ch_list = ['classifier_output']
+#     if gt is not None:
+#         ch_list.append('ground_truth')
+#         gt_bouts = list_to_bouts(gt)
+#
+#     #####################################################
+#
+#     # Write the header.
+#     fp.write('Bento annotation file\n')
+#     fp.write('Movie file(s):\n{}\n\n'.format(moviename))
+#     fp.write('Stimulus name:\n')
+#     fp.write('Annotation start frame: 1\n')
+#     fp.write('Annotation stop frame: {}\n'.format(len(labels)))
+#     fp.write('Annotation framerate: {}\n\n'.format(framerate))
+#
+#     fp.write('List of channels:\n')
+#     fp.write('\n'.join(ch_list))
+#     fp.write('\n\n')
+#
+#     fp.write('List of annotations:\n')
+#     fp.write('\n'.join(beh_list))
+#     fp.write('\n\n')
+#
+#     #####################################################
+#     fp.write('{}----------\n'.format(ch_list[0]))
+#     for beh in beh_list:
+#         if beh in bouts.keys():
+#             fp.write('>{}\n'.format(beh))
+#             fp.write('Start\tStop\tDuration\n')
+#             for start,stop in zip(bouts[beh]['start'],bouts[beh]['stop']):
+#                 fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
+#             fp.write('\n')
+#     fp.write('\n')
+#
+#     if gt is not None:
+#         fp.write('{}----------\n'.format(ch_list[1]))
+#         for beh in beh_list:
+#             if beh in gt_bouts.keys():
+#                 fp.write('>{}\n'.format(beh))
+#                 fp.write('Start\tStop\tDuration\n')
+#                 for start,stop in zip(gt_bouts[beh]['start'],gt_bouts[beh]['stop']):
+#                     fp.write('{}\t{}\t{}\t\n'.format(start,stop,stop-start+1))
+#                 fp.write('\n')
+#         fp.write('\n')
+#
+#     fp.close()
+#     return
 
 
 def dump_proba(data_smooth, features, classifier_savename, fps=30):

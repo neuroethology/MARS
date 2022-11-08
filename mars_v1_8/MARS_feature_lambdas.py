@@ -25,10 +25,10 @@ def generate_valid_feature_list(cfg):
             feats[cam][mouse]['joint_angle'] = ['angle_head_body_l', 'angle_head_body_r', 'angle_nose_neck_tail', 'angle_to_center']
             feats[cam][mouse]['joint_angle_trig'] = ['sin_angle_head_body_l', 'cos_angle_head_body_l',
                                                      'sin_angle_head_body_r', 'cos_angle_head_body_r',
-                                                     'sin_angle_nose_neck_tail', 'cos_angle_nose_neck_tail']
+                                                     'sin_angle_nose_neck_tail', 'cos_angle_nose_neck_tail', 'angle_to_center']
             feats[cam][mouse]['fit_ellipse'] = ['major_axis_len', 'minor_axis_len', 'axis_ratio', 'area_ellipse']
             feats[cam][mouse]['distance_to_walls'] = ['dist_edge_x', 'dist_edge_y', 'dist_edge', 'dist_to_center']
-            feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd']
+            feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd', 'max_jitter', 'mean_jitter']
             feats[cam][mouse]['acceleration'] = ['acceleration_head', 'acceleration_body', 'acceleration_centroid']
 
         pairmice.remove(mouse)
@@ -44,7 +44,7 @@ def generate_valid_feature_list(cfg):
         for mouse in mice:
             feats[cam][mouse]['raw_coordinates'] = [(p + c) for p in parts for c in ['_x', '_y']]
             [feats[cam][mouse]['raw_coordinates'].append(p + c) for p in inferred_parts for c in ['_x', '_y']]
-            feats[cam][mouse]['intramouse_distance'] = [('dist_' + p + '_' + q) for p in parts for q in parts if q != p]
+            feats[cam][mouse]['intramouse_distance'] = [('dist_' + p + '_' + q) for i, p in enumerate(parts) for q in parts[i+1:]]
         for mouse2 in pairmice:
             feats[cam][mouse+mouse2]['intermouse_distance'] = [('dist_m1' + p + '_m2' + q) for p in parts for q in parts]
 
@@ -109,16 +109,15 @@ def generate_lambdas():
     lam['xy']['centroid_body_x'] = lambda x, y: np.mean(x[4:])
     lam['xy']['centroid_body_y'] = lambda x, y: np.mean(y[4:])
     for i, p1 in enumerate(parts_list):
-        for j, p2 in enumerate(parts_list):
-            if p1 != p2:
-                lam['xy']['dist_' + p1 + '_' + p2] = lambda x, y, ind1=i, ind2=j: \
-                                                            np.linalg.norm([x[ind1] - x[ind2], y[ind1] - y[ind2]])
+        for j, p2 in enumerate(parts_list[i+1:]):
+            lam['xy']['dist_' + p1 + '_' + p2] = lambda x, y, ind1=i, ind2=j: \
+                                                        np.linalg.norm([x[ind1] - x[ind2], y[ind1] - y[ind2]])
     for i, part in enumerate(parts_list):
         lam['xy'][part + '_x'] = lambda x, y, ind=i: x[ind]
         lam['xy'][part + '_y'] = lambda x, y, ind=i: y[ind]
 
     # features based on position or angle w.r.t. arena ###########################################
-    lam['xybd']['angle_to_center'] = lambda x, y, xlims, ylims: np.cos(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
+    lam['xybd']['angle_to_center'] = lambda x, y, xlims, ylims: np.sin(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
                                                                                     [(xlims[1] - xlims[0]) / 2 + xlims[0],
                                                                                      (ylims[1] - ylims[0]) / 2 + ylims[0]]))
     lam['xybd']['dist_to_center'] = lambda x, y, xlims, ylims: np.linalg.norm([x[0] - ((xlims[1] - xlims[0]) / 2 + xlims[0]),
@@ -138,6 +137,8 @@ def generate_lambdas():
     lam['dt']['speed'] = lambda xt1, yt1, xt2, yt2: speed_head_hips(lam, xt1, yt1, xt2, yt2)
     lam['dt']['speed_centroid'] = lambda xt1, yt1, xt2, yt2: speed_centroid(lam, xt1, yt1, xt2, yt2)
     lam['dt']['speed_fwd'] = lambda xt1, yt1, xt2, yt2: speed_fwd(lam, xt1, yt1, xt2, yt2)
+    lam['dt']['mean_jitter'] = lambda xt1, yt1, xt2, yt2: np.mean(np.linalg.norm([xt2 - xt1, yt2 - yt1], axis=0))
+    lam['dt']['max_jitter'] = lambda xt1, yt1, xt2, yt2: np.max(np.linalg.norm([xt2 - xt1, yt2 - yt1], axis=0))
     # going to omit the windowed [('speed_centroid_' + w) for w in ['w2', 'w5', 'w10']],
     # as these are too sensitive to changes in imaging framerate
 
