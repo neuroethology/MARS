@@ -34,22 +34,10 @@ def walk_current_folder(root_path, mars_opts):
             cond1 = all(x not in fname for x in ['.seq', '.avi', '.mpg', '.mp4'])
             cond2 = 'skipped' in path
             cond3 = 'Top' not in fname and '_t.seq' not in fname
-            if cond1 | cond2 | cond3:
+            if cond1 | cond2: # | cond3:
                 continue
 
-            if 'Top' in fname or '_t.seq' in fname:
-                front_fname, top_fname, mouse_name = mof.get_names(fname)
-                if top_fname != fname: continue
-                fullpath_to_front = os.path.join(path, front_fname)
-                fullpath_to_top = os.path.join(path, top_fname)
-                cond1 = not (os.path.exists(fullpath_to_front))
-                cond2 = mars_opts['doFront']
-                cond3 = not mars_opts['doTop']
-                cond4 = not mars_opts['doToppcf']
-                # If the front video doesn't exist and we need it, continue.
-                if (cond1 and cond2):  # |(cond3 and cond4):
-                    continue
-            elif 'Front' in fname:
+            if 'Front' in fname:
                 front_fname = fname
                 front_fname, top_fname, mouse_name = mof.get_names(front_fname)
                 # if front_fname != fname: continue
@@ -63,8 +51,23 @@ def walk_current_folder(root_path, mars_opts):
                 if (cond1 and cond2 and cond4) | cond3:
                     continue
             else:
+                front_fname, top_fname, mouse_name = mof.get_names(fname)
+                if top_fname != fname: 
+                    fullpath_to_top = fname
+                    fullpath_to_front = ''
+                else:
+                    fullpath_to_front = os.path.join(path, front_fname)
+                    fullpath_to_top = os.path.join(path, top_fname)
+                cond1 = not (os.path.exists(fullpath_to_front))
+                cond2 = mars_opts['doFront']
+                cond3 = not mars_opts['doTop']
+                cond4 = not mars_opts['doToppcf']
+                # If the front video doesn't exist and we need it, continue.
+                if (cond1 and cond2):  # |(cond3 and cond4):
+                    continue
+            #else:
                 # This is a movie file, but doesnt have "Top" or "Front" in it. Let's skip it.
-                continue
+                #continue
 
             # Save the paths we want to use.
             mouse_trial = dict()
