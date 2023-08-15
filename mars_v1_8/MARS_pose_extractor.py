@@ -170,9 +170,17 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                     # Update the progress bar with the number of total frames it will be processing.
                     progress_bar_signal.emit(0, NUM_FRAMES)
 
+                frcount=0
                 for f in range(NUM_FRAMES):
                     img = reader.getFrame(f)
-                    q_start_to_predet.put([img,bboxes[f]])
+                    # q_start_to_predet.put([img,bboxes[f]])
+                    if img is not None:
+                       q_start_to_predet.put([img,bboxes[f]])
+                       frcount+=1     
+
+		     
+                if frcount != NUM_FRAMES:
+                    print('Only loaded ' + str(frcount) + ' out of ' + str(NUM_FRAMES) + ' expected frames')
 
                 # Push through the poison pill.
                 q_start_to_predet.put(get_poison_pill())

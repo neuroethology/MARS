@@ -22,8 +22,8 @@ def get_names(video_name, pair_files=False):
             if mouse_name.endswith('_Front'):
                 mouse_name = mouse_name[:-6]
             return video_name, video_name, mouse_name
-        else:
-            return '', '', ''
+        else: 
+            mouse_name = os.path.splitext(video_name)[0]
 
     # this is legacy code to support various ways we distinguished Top vs Front-view video during development.
     if ('Top_J85.seq' in video_name):
@@ -51,13 +51,17 @@ def get_names(video_name, pair_files=False):
     if 'J85' in video_name:
         top_ending = '_Top_J85.seq'
         front_ending = '_Front_J85.seq'
-    elif any(x in video_name for x in ['_s.seq', '_t.seq']):
+    elif any(x in video_name for x in ['_s.seq','_t.seq']):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
+    elif mouse_name == os.path.splitext(video_name)[0]:
+    	ext = os.path.splitext(video_name)[1]
+    	top_ending = ext
+    	front_ending = ext
     else:
         ext = os.path.splitext(video_name)[1]
-        top_ending = '_Top' + ext
-        front_ending = '_Front' + ext
+        top_ending = '_Top'+ext
+        front_ending = '_Front'+ext
 
     top_name = mouse_name + top_ending
     front_name = mouse_name + front_ending

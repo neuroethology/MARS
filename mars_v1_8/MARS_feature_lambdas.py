@@ -25,7 +25,7 @@ def generate_valid_feature_list(cfg):
             feats[cam][mouse]['joint_angle'] = ['angle_head_body_l', 'angle_head_body_r', 'angle_nose_neck_tail', 'angle_to_center']
             feats[cam][mouse]['joint_angle_trig'] = ['sin_angle_head_body_l', 'cos_angle_head_body_l',
                                                      'sin_angle_head_body_r', 'cos_angle_head_body_r',
-                                                     'sin_angle_nose_neck_tail', 'cos_angle_nose_neck_tail', 'angle_to_center']
+                                                     'sin_angle_nose_neck_tail', 'cos_angle_nose_neck_tail']
             feats[cam][mouse]['fit_ellipse'] = ['major_axis_len', 'minor_axis_len', 'axis_ratio', 'area_ellipse']
             feats[cam][mouse]['distance_to_walls'] = ['dist_edge_x', 'dist_edge_y', 'dist_edge', 'dist_to_center']
             feats[cam][mouse]['speed'] = ['speed', 'speed_centroid', 'speed_fwd', 'max_jitter', 'mean_jitter']
@@ -117,7 +117,7 @@ def generate_lambdas():
         lam['xy'][part + '_y'] = lambda x, y, ind=i: y[ind]
 
     # features based on position or angle w.r.t. arena ###########################################
-    lam['xybd']['angle_to_center'] = lambda x, y, xlims, ylims: np.sin(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
+    lam['xybd']['_center'] = lambda x, y, xlims, ylims: np.sin(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
                                                                                     [(xlims[1] - xlims[0]) / 2 + xlims[0],
                                                                                      (ylims[1] - ylims[0]) / 2 + ylims[0]]))
     lam['xybd']['dist_to_center'] = lambda x, y, xlims, ylims: np.linalg.norm([x[0] - ((xlims[1] - xlims[0]) / 2 + xlims[0]),
