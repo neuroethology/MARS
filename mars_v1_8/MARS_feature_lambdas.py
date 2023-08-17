@@ -46,7 +46,7 @@ def generate_valid_feature_list(cfg):
             [feats[cam][mouse]['raw_coordinates'].append(p + c) for p in inferred_parts for c in ['_x', '_y']]
             feats[cam][mouse]['intramouse_distance'] = [('dist_' + p + '_' + q) for i, p in enumerate(parts) for q in parts[i+1:]]
         for mouse2 in pairmice:
-            feats[cam][mouse2 + mouse]['intermouse_distance'] = [('dist_m1' + p + '_m2' + q) for p in parts for q in parts]
+            feats[cam][mouse2 + mouse]['intermouse_distance'] = [('dist_m0' + p + '_m1' + q) for p in parts for q in parts]
 
     # make sure we have a lambda for each named feature
     for cam in cameras:
