@@ -154,7 +154,9 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
     feat_basenames = {}
     classifier_path = opts['classifier_model']
     models = get_classifier_list(classifier_path)
-    if 'classify_behaviors' not in opts.keys() or not opts['classify_behaviors']:
+    if 'classify_behaviors' not in opts.keys():
+        opts['classify_behaviors'] = ['DUMMY_PLUG']
+    if not opts['classify_behaviors']:
         opts['classify_behaviors'] = ['DUMMY_PLUG']
 
     for behavior in opts['classify_behaviors']:  # figure out what kind of features we need for each classifier
