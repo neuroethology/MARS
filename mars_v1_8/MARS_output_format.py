@@ -154,13 +154,13 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
     feat_basenames = {}
     classifier_path = opts['classifier_model']
     models = get_classifier_list(classifier_path)
-    if not opts['classify_behaviors']:
+    if 'classify_behaviors' not in opts.keys() or not opts['classify_behaviors']:
         opts['classify_behaviors'] = ['DUMMY_PLUG']
 
     for behavior in opts['classify_behaviors']:  # figure out what kind of features we need for each classifier
 
         if behavior is 'DUMMY_PLUG':  # there aren't any classifiers, let's just extract all custom features.
-            cfg = {'animal_names': ['undefined'],
+            cfg = {'animal_names': ['black', 'white'],
                    'num_obj': opts['num_mice'],
                    'params': {}
                    }

@@ -33,11 +33,11 @@ def generate_valid_feature_list(cfg):
 
         pairmice.remove(mouse)
         for mouse2 in pairmice:
-            feats[cam][mouse+mouse2] = {}
-            feats[cam][mouse+mouse2]['social_angle'] = ['angle_between', 'facing_angle', 'angle_social']
-            feats[cam][mouse + mouse2]['social_angle_trig'] = ['sin_angle_between', 'cos_angle_between', 'sin_facing_angle', 'cos_facing_angle', 'sin_angle_social', 'cos_angle_social']
-            feats[cam][mouse+mouse2]['relative_size'] = ['area_ellipse_ratio']
-            feats[cam][mouse+mouse2]['social_distance'] = ['dist_centroid', 'dist_nose', 'dist_head', 'dist_body',
+            feats[cam][mouse2 + mouse] = {}
+            feats[cam][mouse2 + mouse]['social_angle'] = ['angle_between', 'facing_angle', 'angle_social']
+            feats[cam][mouse2 + mouse]['social_angle_trig'] = ['sin_angle_between', 'cos_angle_between', 'sin_facing_angle', 'cos_facing_angle', 'sin_angle_social', 'cos_angle_social']
+            feats[cam][mouse2 + mouse]['relative_size'] = ['area_ellipse_ratio']
+            feats[cam][mouse2 + mouse]['social_distance'] = ['dist_centroid', 'dist_nose', 'dist_head', 'dist_body',
                                                    'dist_head_body', 'dist_gap', 'dist_scaled', 'overlap_bboxes']
 
     for cam, parts in zip(cameras.keys(), [cameras[i] for i in cameras.keys()]):
@@ -46,7 +46,7 @@ def generate_valid_feature_list(cfg):
             [feats[cam][mouse]['raw_coordinates'].append(p + c) for p in inferred_parts for c in ['_x', '_y']]
             feats[cam][mouse]['intramouse_distance'] = [('dist_' + p + '_' + q) for i, p in enumerate(parts) for q in parts[i+1:]]
         for mouse2 in pairmice:
-            feats[cam][mouse+mouse2]['intermouse_distance'] = [('dist_m1' + p + '_m2' + q) for p in parts for q in parts]
+            feats[cam][mouse2 + mouse]['intermouse_distance'] = [('dist_m1' + p + '_m2' + q) for p in parts for q in parts]
 
     # make sure we have a lambda for each named feature
     for cam in cameras:
