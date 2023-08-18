@@ -177,7 +177,7 @@ def generate_lambdas():
 
     for i, p1 in enumerate(parts_list):
         for j, p2 in enumerate(parts_list):
-            lam['xyxy']['dist_m1' + p1 + '_m2' + p2] = \
+            lam['xyxy']['dist_m0' + p1 + '_m1' + p2] = \
                 lambda x1, y1, x2, y2, ind1=i, ind2=j: np.linalg.norm([x1[ind1] - x2[ind2], y1[ind1] - y2[ind2]])
 
     # features based on the bounding boxes ##############################################

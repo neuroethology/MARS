@@ -70,7 +70,7 @@ def flatten_feats(feats, use_grps=[], use_cams=[], use_mice=[]):
                 if feat_class in feats[cam][mouse].keys():
                     features = features + ["_".join((cam, mouse, s)) for s in feats[cam][mouse][feat_class] if "_".join((cam, mouse, s)) not in features]
         for pair in mousepairs:
-            grplist = use_grps if use_grps else feats[cam][pair].keys() if pair in feats[cam].keys() else []
+            grplist = use_grps if use_grps and pair in feats[cam].keys() else feats[cam][pair].keys() if pair in feats[cam].keys() else []
             for feat_class in grplist:  # feats[cam][mouse].keys():
                 if feat_class in feats[cam][pair].keys():
                     features = features + ["_".join((cam, pair, s)) for s in feats[cam][pair][feat_class] if "_".join((cam, pair, s)) not in features]
@@ -221,8 +221,9 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
     lam = mars_lambdas.generate_lambdas()
     if not use_grps:
         use_grps = []
-        for mouse in mouse_list:
+        for mouse in feats[use_cam].keys():
             use_grps = use_grps + list(feats[use_cam][mouse].keys())
+        use_grps = list(set(use_grps))
     else:
         for grp in use_grps:
             if grp not in feats[use_cam][mouse_list[0]].keys():
