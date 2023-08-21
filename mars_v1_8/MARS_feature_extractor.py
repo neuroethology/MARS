@@ -191,8 +191,8 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
     # if smooth_keypoints:
         # keypoints = smooth_keypoint_trajectories(keypoints)
 
-    dscale = opts['pixels_per_cm']
-    fps = opts['framerate']
+    dscale = float(opts['pixels_per_cm'])
+    fps = float(opts['framerate'])
     cfg = opts['classifier_features']['project_config']  # unpack the MARS_developer project config info
     use_grps = features if features else opts['classifier_features']['feat_list'] if 'feat_list' in opts['classifier_features'].keys() else None
     num_frames = len(keypoints)
@@ -264,7 +264,7 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
         allx = np.asarray(allx)/dscale
         ally = np.asarray(ally)/dscale
         xlims_0 = [np.percentile(allx, 0.01), np.percentile(allx, 99.99)]
-        ylims_0 = [np.percentile(ally, 1), np.percentile(ally, 99.99)]
+        ylims_0 = [np.percentile(ally, 0.01), np.percentile(ally, 99.99)]
         xm0 = [np.array([]) for i in range(num_mice)]
         ym0 = [np.array([]) for i in range(num_mice)]
         xm00 = [np.array([]) for i in range(num_mice)]

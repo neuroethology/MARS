@@ -117,9 +117,9 @@ def generate_lambdas():
         lam['xy'][part + '_y'] = lambda x, y, ind=i: y[ind]
 
     # features based on position or angle w.r.t. arena ###########################################
-    lam['xybd']['_center'] = lambda x, y, xlims, ylims: np.sin(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
-                                                                                    [(xlims[1] - xlims[0]) / 2 + xlims[0],
-                                                                                     (ylims[1] - ylims[0]) / 2 + ylims[0]]))
+    lam['xybd_ang']['angle_to_center'] = lambda x, y, xlims, ylims: np.sin(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
+                                                                                        [(xlims[1] - xlims[0]) / 2 + xlims[0],
+                                                                                        (ylims[1] - ylims[0]) / 2 + ylims[0]]))
     lam['xybd']['dist_to_center'] = lambda x, y, xlims, ylims: np.linalg.norm([x[0] - ((xlims[1] - xlims[0]) / 2 + xlims[0]),
                                                                                y[0] - ((ylims[1] - ylims[0]) / 2 + ylims[0])])
     lam['xybd']['dist_edge_x'] = lambda x, y, xlims, ylims:\
