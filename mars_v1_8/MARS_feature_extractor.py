@@ -403,8 +403,6 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
                     if featname in features:
                         track['data'][m, f, features.index(featname)] = lam['bb'][feat](boxa, boxb)
 
-                if f==310:
-                    print('hi')
                 # environment-based features. Lambda returns pixels, convert to cm.
                 for feat in lam['xybd'].keys():
                     featname = "_".join((use_cam, maStr, feat))
