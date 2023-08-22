@@ -204,7 +204,7 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
 
     if 'keypoints' in cfg.keys():
         parts = cfg['keypoints']
-        nose       = [parts.index(i) for i in cfg['featname']['nose']]
+        nose       = [parts.index(i) for i in cfg['mars_name_matching']['nose']]
         left_ear   = [parts.index(i) for i in cfg['mars_name_matching']['left_ear']]
         right_ear  = [parts.index(i) for i in cfg['mars_name_matching']['right_ear']]
         neck       = [parts.index(i) for i in cfg['mars_name_matching']['neck']]
@@ -261,8 +261,8 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
             mouse_length[f] = np.linalg.norm((xm[0][3] - xm[0][6], ym[0][3] - ym[0][6]))
 
         # estimate the extent of our arena from tracking data
-        allx = np.asarray(allx)/dscale
-        ally = np.asarray(ally)/dscale
+        allx = np.asarray(allx)
+        ally = np.asarray(ally)
         xlims_0 = [np.percentile(allx, 0.01), np.percentile(allx, 99.99)]
         ylims_0 = [np.percentile(ally, 0.01), np.percentile(ally, 99.99)]
         xm0 = [np.array([]) for i in range(num_mice)]
@@ -403,6 +403,8 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
                     if featname in features:
                         track['data'][m, f, features.index(featname)] = lam['bb'][feat](boxa, boxb)
 
+                if f==310:
+                    print('hi')
                 # environment-based features. Lambda returns pixels, convert to cm.
                 for feat in lam['xybd'].keys():
                     featname = "_".join((use_cam, maStr, feat))
