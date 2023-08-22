@@ -37,8 +37,7 @@ def generate_valid_feature_list(cfg):
             feats[cam][mouse2 + mouse]['social_angle'] = ['angle_between', 'facing_angle', 'angle_social']
             feats[cam][mouse2 + mouse]['social_angle_trig'] = ['sin_angle_between', 'cos_angle_between', 'sin_facing_angle', 'cos_facing_angle', 'sin_angle_social', 'cos_angle_social']
             feats[cam][mouse2 + mouse]['relative_size'] = ['area_ellipse_ratio']
-            feats[cam][mouse2 + mouse]['social_distance'] = ['dist_centroid', 'dist_nose', 'dist_head', 'dist_body',
-                                                   'dist_head_body', 'dist_gap', 'dist_scaled', 'overlap_bboxes']
+            feats[cam][mouse2 + mouse]['social_distance'] = ['dist_centroid', 'dist_nose', 'dist_head', 'dist_body', 'dist_head_body', 'dist_gap', 'dist_scaled', 'overlap_bboxes']
 
     for cam, parts in zip(cameras.keys(), [cameras[i] for i in cameras.keys()]):
         for mouse in mice:
@@ -111,7 +110,7 @@ def generate_lambdas():
     lam['xy']['centroid_body_y'] = lambda x, y: np.mean(y[4:])
     for i, p1 in enumerate(parts_list):
         for j, p2 in enumerate(parts_list[i+1:]):
-            lam['xy']['dist_' + p1 + '_' + p2] = norm_helper(i, j)
+            lam['xy']['dist_' + p1 + '_' + p2] = norm_helper(i, i + j + 1)
     for i, part in enumerate(parts_list):
         lam['xy'][part + '_x'] = pos_helper_x(i)
         lam['xy'][part + '_y'] = pos_helper_y(i)
@@ -177,7 +176,7 @@ def generate_lambdas():
 
     for i, p1 in enumerate(parts_list):
         for j, p2 in enumerate(parts_list):
-            lam['xyxy']['dist_m0' + p1 + '_m1' + p2] = norm_helper_2(i,j)
+            lam['xyxy']['dist_m0' + p1 + '_m1' + p2] = norm_helper_2(i, j)
 
     # features based on the bounding boxes ##############################################
     lam['bb']['overlap_bboxes'] = lambda box1, box2: bb_intersection_over_union(box1, box2)

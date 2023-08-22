@@ -397,11 +397,11 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
                             track['data'][m, f, features.index(featname)] = \
                                 lam['2mdt'][feat](xa, ya, xa0, ya0, xb, yb) * fps / dscale
 
-                # Bounding box features. No unit conversion needed so far.
-                for feat in lam['bb'].keys():
-                    featname = "_".join((use_cam, maStr, feat))
-                    if featname in features:
-                        track['data'][m, f, features.index(featname)] = lam['bb'][feat](boxa, boxb)
+                    # Bounding box features. No unit conversion needed so far.
+                    for feat in lam['bb'].keys():
+                        featname = "_".join((use_cam, maStr+mbStr, feat))
+                        if featname in features:
+                            track['data'][m, f, features.index(featname)] = lam['bb'][feat](boxa, boxb)
 
                 # environment-based features. Lambda returns pixels, convert to cm.
                 for feat in lam['xybd'].keys():
