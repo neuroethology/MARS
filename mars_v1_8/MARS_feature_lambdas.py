@@ -251,7 +251,7 @@ def fit_ellipse(X,Y):
     return ell
 
 
-def bb_intersection_over_union(boxA,boxB,im_w,im_h):
+def bb_intersection_over_union(boxA,boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
     xA = max(boxA[0], boxB[0])
     yA = max(boxA[1], boxB[1])
@@ -260,12 +260,12 @@ def bb_intersection_over_union(boxA,boxB,im_w,im_h):
 
     # compute the area of intersection rectangle
     if xB > xA and yB > yA:
-        interArea = (xB*im_w - xA*im_w + 1) * (yB*im_h - yA*im_h + 1)
+        interArea = (xB - xA) * (yB - yA)
 
         # compute the area of both the prediction and ground-truth
         # rectangles
-        boxAArea = (boxA[2]*im_w - boxA[0]*im_w + 1) * (boxA[3]*im_h - boxA[1]*im_h + 1)
-        boxBArea = (boxB[2]*im_w - boxB[0]*im_w + 1) * (boxB[3]*im_h - boxB[1]*im_h + 1)
+        boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+        boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
 
         # compute the intersection over union by taking the intersection
         # area and dividing it by the sum of prediction + ground-truth
