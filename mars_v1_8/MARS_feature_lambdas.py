@@ -56,6 +56,7 @@ def generate_valid_feature_list(cfg):
 
     return feats
 
+
 def generate_lambdas():
     # define the lambdas for all the features, grouped by their required inputs.
     # units for all lambdas are in pixels and frames. These should be converted to mouselengths and seconds
@@ -110,11 +111,10 @@ def generate_lambdas():
     lam['xy']['centroid_body_y'] = lambda x, y: np.mean(y[4:])
     for i, p1 in enumerate(parts_list):
         for j, p2 in enumerate(parts_list[i+1:]):
-            lam['xy']['dist_' + p1 + '_' + p2] = lambda x, y, ind1=i, ind2=j: \
-                                                        np.linalg.norm([x[ind1] - x[ind2], y[ind1] - y[ind2]])
+            lam['xy']['dist_' + p1 + '_' + p2] = norm_helper(i, j)
     for i, part in enumerate(parts_list):
-        lam['xy'][part + '_x'] = lambda x, y, ind=i: x[ind]
-        lam['xy'][part + '_y'] = lambda x, y, ind=i: y[ind]
+        lam['xy'][part + '_x'] = pos_helper_x(i)
+        lam['xy'][part + '_y'] = pos_helper_y(i)
 
     # features based on position or angle w.r.t. arena ###########################################
     lam['xybd_ang']['angle_to_center'] = lambda x, y, xlims, ylims: np.sin(interior_angle_orth([x[0], y[0]], [x[3], y[3]],
@@ -177,8 +177,7 @@ def generate_lambdas():
 
     for i, p1 in enumerate(parts_list):
         for j, p2 in enumerate(parts_list):
-            lam['xyxy']['dist_m0' + p1 + '_m1' + p2] = \
-                lambda x1, y1, x2, y2, ind1=i, ind2=j: np.linalg.norm([x1[ind1] - x2[ind2], y1[ind1] - y2[ind2]])
+            lam['xyxy']['dist_m0' + p1 + '_m1' + p2] = norm_helper_2(i,j)
 
     # features based on the bounding boxes ##############################################
     lam['bb']['overlap_bboxes'] = lambda box1, box2: bb_intersection_over_union(box1, box2)
@@ -190,6 +189,22 @@ def generate_lambdas():
     lam['bb_video']['pix_change_bbox'] = lambda img1, img2, bb1, bb2, bb10, bb20: pixel_change_ubbox(lam, bb1, bb2, bb10, bb20, img1, img2)
 
     return lam
+
+
+def norm_helper(ind1,ind2):
+    return lambda x, y: np.linalg.norm([x[ind1] - x[ind2], y[ind1] - y[ind2]])
+
+
+def norm_helper_2(ind1, ind2):
+    return lambda x1, y1, x2, y2: np.linalg.norm([x1[ind1] - x2[ind2], y1[ind1] - y2[ind2]])
+
+
+def pos_helper_x(ind):
+    return lambda x, y: x[ind]
+
+
+def pos_helper_y(ind):
+    return lambda x, y: y[ind]
 
 
 def get_angle(Ax, Ay, Bx, By):
