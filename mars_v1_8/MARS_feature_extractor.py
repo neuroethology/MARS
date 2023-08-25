@@ -78,11 +78,16 @@ def flatten_feats(feats, use_grps=[], use_cams=[], use_mice=[]):
     return features
 
 
-def center_on_mouse(xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims, ylims):
-    # Translate and rotate points so that the neck of mouse A is at the origin, and ears are flat.
-    ori_x = xa[3]
-    ori_y = ya[3]
-    phi = np.arctan2(ya[2] - ya[1], xa[2] - xa[1])
+def center_on_mouse(m, xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims, ylims):
+    # Translate and rotate points so that the neck of mouse A is at the origin, and neck-tail line is horizontal.
+    if m==0:
+        ori_x = xa[3]
+        ori_y = ya[3]
+        phi = np.arctan2(ya[6] - ya[3], xa[6] - xa[3])
+    else:
+        ori_x = xb[3]
+        ori_y = yb[3]
+        phi = np.arctan2(yb[6] - yb[3], xb[6] - xb[3])
     lam_x = lambda x, y:  (x - ori_x) * np.cos(-phi) + (y - ori_y) * np.sin(-phi)
     lam_y = lambda x, y: -(x - ori_x) * np.sin(-phi) + (y - ori_y) * np.cos(-phi)
 
@@ -178,7 +183,7 @@ def get_good_keypoints(keypoints, scores, num_mice, partorder, scorethresh=0.25)
 
 
 def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], features=[],
-                           front_video_fullpath='', mouse_list=[], center_mouse=False, use_cam='top', max_frames=-1):
+                           front_video_fullpath='', mouse_list=[], center_mouse=True, use_cam='top', max_frames=-1):
 
     # TODO: this function has a couple optional flags that aren't yet accessible to users:
     # smooth_keypoints - smooth keypoint trajectories before feature extraction (code not actually in place yet)
@@ -316,7 +321,7 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
             for m, (maStr, mbStr, xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb) in enumerate(mouse_vals):
                 if center_mouse:
                     (xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims, ylims) = \
-                        center_on_mouse(xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims_0, ylims_0)
+                        center_on_mouse(m, xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims_0, ylims_0)
                 else:
                     xlims = xlims_0
                     ylims = ylims_0
