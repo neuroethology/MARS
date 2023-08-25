@@ -183,7 +183,7 @@ def get_good_keypoints(keypoints, scores, num_mice, partorder, scorethresh=0.25)
 
 
 def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], features=[],
-                           front_video_fullpath='', mouse_list=[], center_mouse=True, use_cam='top', max_frames=-1):
+                           front_video_fullpath='', mouse_list=[], center_mouse=False, use_cam='top', max_frames=-1):
 
     # TODO: this function has a couple optional flags that aren't yet accessible to users:
     # smooth_keypoints - smooth keypoint trajectories before feature extraction (code not actually in place yet)
