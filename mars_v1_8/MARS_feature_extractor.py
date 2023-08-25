@@ -319,18 +319,8 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
             else:
                 mouse_vals.append(('m0', '', xm[0], ym[0], xm[0], ym[0], xm0[0], ym0[0], xm00[0], ym00[0], bboxes[0], bboxes[0]))
             for m, (maStr, mbStr, xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb) in enumerate(mouse_vals):
-                if center_mouse:
-                    (xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims, ylims) = \
-                        center_on_mouse(m, xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims_0, ylims_0)
-                else:
-                    xlims = xlims_0
-                    ylims = ylims_0
-
-                # single-mouse features. Lambda returns pixels, convert to cm.
-                for feat in lam['xy'].keys():
-                    featname = "_".join((use_cam, maStr, feat))
-                    if featname in features:
-                        track['data'][m, f, features.index(featname)] = lam['xy'][feat](xa, ya) / dscale
+                xlims = xlims_0
+                ylims = ylims_0
 
                 # single-mouse angle or ratio features. No unit conversion needed.
                 for feat in lam['xy_ang'].keys():
@@ -419,6 +409,16 @@ def run_feature_extraction(top_pose_fullpath, opts, progress_bar_sig=[], feature
                     featname = "_".join((use_cam, maStr, feat))
                     if featname in features:
                         track['data'][m, f, features.index(featname)] = lam['xybd_ang'][feat](xa, ya, xlims, ylims)
+
+                if center_mouse:
+                    (xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims, ylims) = \
+                        center_on_mouse(m, xa, ya, xb, yb, xa0, ya0, xa00, ya00, boxa, boxb, xlims_0, ylims_0)
+
+                # single-mouse features. Lambda returns pixels, convert to cm.
+                for feat in lam['xy'].keys():
+                    featname = "_".join((use_cam, maStr, feat))
+                    if featname in features:
+                        track['data'][m, f, features.index(featname)] = lam['xy'][feat](xa, ya) / dscale
 
         # TODO: we could apply smoothing here if we wanted.
         # track['features'] = features_ordered
