@@ -23,7 +23,7 @@ Installing MARS via Docker instead of conda will give MARS more protection from 
 Verify that Docker was installed correctly by calling `docker run hello-world` from terminal (same command on all operating systems). This should output a "Hello from Docker!" message with some additional text.
 
 ## Install the NVIDIA Container Toolkit
-This will allow MARS to access your GPU from within a docker container. Follow the installation instructions [https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker](here).
+This will allow MARS to access your GPU from within a docker container. Follow the installation instructions [here](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker).
 
   Verify that everything installed properly by calling:
   ```
