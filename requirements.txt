@@ -15,5 +15,5 @@ colour_demosaicing
 imbalanced-learn==0.3.3
 colour-science
 xlwt
-joblib==0.11
+joblib==1.2.0
 hmmlearn==0.2.2
