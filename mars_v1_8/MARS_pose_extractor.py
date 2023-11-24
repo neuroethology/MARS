@@ -218,6 +218,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 in_q = [None] * BATCH_SIZE
                 det_out = [[None] * BATCH_SIZE for d in detectors]
                 pose_image_q = [None] * BATCH_SIZE
+                prepped_images = [None] * BATCH_SIZE
                 # """
 
                     # """
@@ -245,7 +246,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                             process_time_1 = time.perf_counter()
                             process_time[9] += process_time_1 - process_time_1a
 
-                    for i, d, p in enumerate(zip(detectors, pose_models)):
+                    for i, [d, p] in enumerate(zip(detectors, pose_models)):
                         for ix in range(batch_end - batch_start):
                             det_out[i][ix] = run_det_inner(in_q[ix], d, mars_opts)
                         if time_steps:
@@ -262,17 +263,18 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                                 process_time_4 = time.perf_counter()
                                 process_time[4] += process_time_4 - process_time_start_1
 
-                            prepped_images, bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
+                            prepped_images[ix], bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
 
-                            if time_steps:
-                                process_time_5 = time.perf_counter()
-                                process_time[5] += process_time_5 - process_time_4
+                        if time_steps:
+                            process_time_5 = time.perf_counter()
+                            process_time[5] += process_time_5 - process_time_4
 
-                            predicted_heatmaps = run_hm_inner(prepped_images, p)
+                        prepped_images = np.squeeze(np.array(prepped_images))
+                        predicted_heatmaps = run_hm_inner(prepped_images, p)
 
-                            if time_steps:
-                                process_time_6 = time.perf_counter()
-                                process_time[6] += process_time_6 - process_time_5
+                        if time_steps:
+                            process_time_6 = time.perf_counter()
+                            process_time[6] += process_time_6 - process_time_5
 
                         post_hm_inner(predicted_heatmaps, bboxes_confs, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, pose_basename, top_pose_frames, bar, current_frame_num)
 
