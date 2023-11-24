@@ -612,9 +612,9 @@ def pre_hm(q_in_det, q_in_image, q_out_img, q_out_bbox, IM_W, IM_H):
 def run_hm_setup(view, opts):
     # Figure out which view we're using.
     if view == 'front':
-        QUANT_POSE = str(Path(opts['pose_front']))
+        QUANT_POSE = str(Path(opts['pose_front'][0]))  # TODO: fix HM setup to support multiple pose models ################################################################
     else:
-        QUANT_POSE = str(Path(opts['pose_top']))
+        QUANT_POSE = str(Path(opts['pose_top'][0]))
 
     # Import the pose model.
     return ImportGraphPose(QUANT_POSE)
