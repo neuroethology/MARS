@@ -74,7 +74,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
         # coremltools on MACs doesn't interact well with multiprocessing, but access to the system GPU, even if it's not
         # from NVidia, more than makes up for sequential processing.  coremltools only works on MacOS Catalina and up.
         major, minor, _ = get_macOS_version_info()
-        use_multiprocessing = not (major == 10 and minor >= 15)
+        use_multiprocessing = not (major == 10 and minor >= 15) and mars_opts['multiprocessing']
 
         if verbose:
             print('1 - Extracting pose')
@@ -264,15 +264,15 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
 
                             prepped_images, bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
 
-                        if time_steps:
-                            process_time_5 = time.perf_counter()
-                            process_time[5] += process_time_5 - process_time_4
+                            if time_steps:
+                                process_time_5 = time.perf_counter()
+                                process_time[5] += process_time_5 - process_time_4
 
-                        predicted_heatmaps = run_hm_inner(prepped_images, p)
+                            predicted_heatmaps = run_hm_inner(prepped_images, p)
 
-                        if time_steps:
-                            process_time_6 = time.perf_counter()
-                            process_time[6] += process_time_6 - process_time_5
+                            if time_steps:
+                                process_time_6 = time.perf_counter()
+                                process_time[6] += process_time_6 - process_time_5
 
                         post_hm_inner(predicted_heatmaps, bboxes_confs, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, pose_basename, top_pose_frames, bar, current_frame_num)
 

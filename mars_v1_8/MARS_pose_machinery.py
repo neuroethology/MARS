@@ -449,7 +449,7 @@ def run_det_setup(opts):
         detectors = []
         for s in opts['subjects']:
             model_list = [a['name'] for a in opts['all_models']]
-            if s in model_list:
+            if s['name']in model_list:
                 idx = model_list.index(s['name'])
                 model = opts['all_models'][idx]['detection']
             else:
@@ -614,13 +614,13 @@ def run_hm_setup(opts):
     pose = []
     for s in opts['subjects']:
         model_list = [a['name'] for a in opts['all_models']]
-        if s in model_list:
+        if s['name'] in model_list:
             idx = model_list.index(s['name'])
             model = opts['all_models'][idx]['pose']
         else:
             raise ValueError('model name ' + s['name'] + ' not found. Available models are: ' + ', '.join(model_list))
         for i in range(s['count']):
-            pose.append(ImportGraphDetection(model))
+            pose.append(ImportGraphPose(model))
 
     return pose
 
