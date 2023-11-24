@@ -162,8 +162,8 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
     for behavior in opts['classify_behaviors']:  # figure out what kind of features we need for each classifier
 
         if behavior is 'DUMMY_PLUG':  # there aren't any classifiers, let's just extract all custom features.
-            cfg = {'animal_names': ['black', 'white'],
-                   'num_obj': opts['num_mice'],
+            cfg = {'animal_names': [o['name'].replace('mouse', '').replace('top', '').replace('front', '').replace(' ', '') for o in opts['subjects']],
+                   'num_obj': sum([o['count'] for o in opts['subjects']]),
                    'params': {}
                    }
             feature_type = 'custom'

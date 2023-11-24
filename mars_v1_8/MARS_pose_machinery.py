@@ -443,18 +443,19 @@ def pre_det(q_in, q_out_predet, q_out_raw, median_frame, IM_TOP_H, IM_TOP_W):
         print(e)
         raise(e)
 
-def run_det_setup(view, opts):
+def run_det_setup(opts):
     """ setup for run_det """
     if not opts['useExistingBBoxes']:
-        if view == 'front':
-            QUANT_DET_PATHS = opts['detector_front']
-        else:
-            QUANT_DET_PATHS = opts['detector_top']
-
-        # Import the detection networks.
         detectors = []
-        for i,p in enumerate(QUANT_DET_PATHS):
-            detectors.append(ImportGraphDetection(p))
+        for s in opts['subjects']:
+            model_list = [a['name'] for a in opts['all_models']]
+            if s in model_list:
+                idx = model_list.index(s['name'])
+                model = opts['all_models'][idx]['detection']
+            else:
+                raise ValueError('model name ' + s['name'] + ' not found. Available models are: ' + ', '.join(model_list))
+            for i in range(s['count']):
+                detectors.append(ImportGraphDetection(model))
 
         return detectors
 
@@ -478,7 +479,7 @@ def run_det(q_in,q_out, view, opts):
     q_out: to post-det, the detection post-processing function."""
     try:
         # Decide on which view to use.
-        detectors = run_det_setup(view, opts)
+        detectors = run_det_setup(opts)
 
         while True:
             # Get the input image.
@@ -609,15 +610,19 @@ def pre_hm(q_in_det, q_in_image, q_out_img, q_out_bbox, IM_W, IM_H):
         raise(e)
 
 
-def run_hm_setup(view, opts):
-    # Figure out which view we're using.
-    if view == 'front':
-        QUANT_POSE = str(Path(opts['pose_front'][0]))  # TODO: fix HM setup to support multiple pose models ################################################################
-    else:
-        QUANT_POSE = str(Path(opts['pose_top'][0]))
+def run_hm_setup(opts):
+    pose = []
+    for s in opts['subjects']:
+        model_list = [a['name'] for a in opts['all_models']]
+        if s in model_list:
+            idx = model_list.index(s['name'])
+            model = opts['all_models'][idx]['pose']
+        else:
+            raise ValueError('model name ' + s['name'] + ' not found. Available models are: ' + ', '.join(model_list))
+        for i in range(s['count']):
+            pose.append(ImportGraphDetection(model))
 
-    # Import the pose model.
-    return ImportGraphPose(QUANT_POSE)
+    return pose
 
 
 def run_hm_inner(prepped_images, pose_model):
@@ -631,7 +636,7 @@ def run_hm(q_in_img, q_out_hm, view, opts):
 
     q_out_hm: to post_hm, contains the heatmaps."""
     try:
-        pose_model = run_hm_setup(view, opts)
+        pose_model = run_hm_setup(opts)
         while True:
             # Collect the prepared images for inference.
             prepped_images = q_in_img.get()
@@ -727,8 +732,8 @@ def run_gpu(q_in_det, q_out_det, q_in_hm, q_out_hm, view, opts, queue_size):
     print("\n\nIn run_gpu\n\n")
     try:
         # Decide on which view to use.
-        det_black, det_white = run_det_setup(view, opts)
-        pose_model = run_hm_setup(view, opts)
+        detectors = run_det_setup(opts) # TODO fix this function ##############################################################3
+        pose_model = run_hm_setup(opts)
     except Exception as e:
         print("\nError occurred during loading of models")
         print(e)

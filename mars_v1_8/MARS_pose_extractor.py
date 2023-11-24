@@ -205,9 +205,9 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                     process_time = [0.] * 10
                     process_time_start = time.perf_counter()
 
-                detectors = run_det_setup(view, mars_opts)
+                detectors = run_det_setup(mars_opts)
                 det_prev_ok_loc, det_prev_ok_conf = post_det_setup()
-                pose_model = run_hm_setup(view, mars_opts)
+                pose_models = run_hm_setup(mars_opts)
                 top_pose_frames, bar = post_hm_setup(NUM_FRAMES)
                 current_frame_num = 0
 
@@ -245,39 +245,35 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                             process_time_1 = time.perf_counter()
                             process_time[9] += process_time_1 - process_time_1a
 
-                    for i,d in enumerate(detectors):
+                    for i, d, p in enumerate(zip(detectors, pose_models)):
                         for ix in range(batch_end - batch_start):
                             det_out[i][ix] = run_det_inner(in_q[ix], d, mars_opts)
                         if time_steps:
                             process_time_2 = time.perf_counter()
                             process_time[2] += process_time_2 - process_time_1
 
-                    if time_steps:
-                        process_time_3 = time.perf_counter()
-                        process_time[3] += process_time_3 - process_time_2
+                        for ix in range(batch_end - batch_start):
+                            if time_steps:
+                                process_time_start_1 = time.perf_counter()
 
-                    for ix in range(batch_end - batch_start):
-                        if time_steps:
-                            process_time_start_1 = time.perf_counter()
-                        
-                        det_out_post = post_det_inner([d[ix] for d in det_out], det_prev_ok_loc, det_prev_ok_conf)
+                            det_out_post = post_det_inner([d[ix] for d in det_out], det_prev_ok_loc, det_prev_ok_conf)
 
-                        if time_steps:
-                            process_time_4 = time.perf_counter()
-                            process_time[4] += process_time_4 - process_time_start_1
-                        
-                        prepped_images, bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
+                            if time_steps:
+                                process_time_4 = time.perf_counter()
+                                process_time[4] += process_time_4 - process_time_start_1
+
+                            prepped_images, bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
 
                         if time_steps:
                             process_time_5 = time.perf_counter()
                             process_time[5] += process_time_5 - process_time_4
-                        
-                        predicted_heatmaps = run_hm_inner(prepped_images, pose_model)
+
+                        predicted_heatmaps = run_hm_inner(prepped_images, p)
 
                         if time_steps:
                             process_time_6 = time.perf_counter()
                             process_time[6] += process_time_6 - process_time_5
-                        
+
                         post_hm_inner(predicted_heatmaps, bboxes_confs, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, pose_basename, top_pose_frames, bar, current_frame_num)
 
                         if time_steps:

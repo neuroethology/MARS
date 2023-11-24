@@ -1,16 +1,31 @@
 # these are the default settings that MARS will use if you don't override them
 
 # relative paths to the models used for detection and pose estimation.
-detector_front: ['models/detection/MARS_front_detection_black.pb','models/detection/MARS_front_detection_white.pb']
-detector_top: ['models/detection/MARS_top_detection_black.pb','models/detection/MARS_top_detection_white.pb']
-pose_front: ['models/pose/MARS_front_pose.pb']
-pose_top: ['models/pose/MARS_top_pose.pb']
+# if you train a new MARS model, add it to this list and give it a unique name.
+# (make sure not to use any Tabs when indenting.)
+all_models:
+  - name: 'black mouse top'
+    detection: 'models/detection/MARS_top_detection_black.pb'
+    pose: 'models/pose/MARS_top_pose.pb'
+  - name: 'white mouse top'
+    detection: 'models/detection/MARS_top_detection_white.pb'
+    pose: 'models/pose/MARS_top_pose.pb'
+  - name: 'black mouse front'
+    detection: 'models/detection/MARS_front_detection_black.pb'
+    pose: 'models/pose/MARS_front_pose.pb'
+  - name: 'white mouse front'
+    detection: 'models/detection/MARS_front_detection_white.pb'
+    pose: 'models/pose/MARS_front_pose.pb'
+
+# which subjects to actually try to track in the current experiment:
+subjects:
+    - name: 'black mouse top'
+      count: 1
 classifiers: models/classifier
 
 # information about your videos. Set framerate=-1 to get the framerate value from the video file.
 pixels_per_cm: 1
 framerate: 30
-num_mice: 1
 
 # which stages of analysis to run- pose estimation, feature extraction, and behavior classification
 # feature extraction is a required step if you wish to do behavior classification, and

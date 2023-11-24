@@ -19,7 +19,7 @@ class dummyGui():
 def parse_opts(user_input):
     # fill in missing options with default values
     with open('config.yml') as f:
-        opts  = yaml.load(f)
+        opts  = yaml.load(f, Loader=yaml.Loader)
     for f in opts.keys():
         opts[f] = user_input[f] if f in user_input.keys() else opts[f]
 
