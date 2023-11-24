@@ -484,7 +484,7 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
 
     pose_basename = mof.get_pose_no_ext(video_fullpath=video_fullpath, output_folder=output_folder, view='top', output_suffix=output_suffix)
     feat_basename_dict = mof.get_feat_no_ext(opts, video_fullpath=video_fullpath, view=feature_view, output_folder=output_folder, output_suffix=output_suffix)
-    clf_models = mof.get_classifier_list(opts['classifier_model'])
+    clf_models = mof.get_classifier_list(opts['classifiers'])
     top_pose_fullpath = pose_basename + '.json'
     # try:
     if not os.path.exists(top_pose_fullpath):
@@ -529,8 +529,8 @@ def extract_features_wrapper(opts, video_fullpath, progress_bar_sig='', output_s
             if behavior is 'DUMMY_PLUG':
                 clf = {'params': {'project_config': feat_basename_dict[behavior]['clf_config']}}
             else:
-                model_name = mof.get_most_recent(opts['classifier_model'], clf_models, behavior)
-                clf = joblib.load(os.path.join(opts['classifier_model'], model_name))
+                model_name = mof.get_most_recent(opts['classifiers'], clf_models, behavior)
+                clf = joblib.load(os.path.join(opts['classifiers'], model_name))
 
             opts['classifier_features'] = clf['params']  # pass along the settings for this classifier
             if feature_type == 'custom':

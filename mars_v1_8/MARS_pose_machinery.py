@@ -447,17 +447,16 @@ def run_det_setup(view, opts):
     """ setup for run_det """
     if not opts['useExistingBBoxes']:
         if view == 'front':
-            QUANT_DET_B_PATH = opts['black_detector_front']
-            QUANT_DET_W_PATH = opts['white_detector_front']
+            QUANT_DET_PATHS = opts['detector_front']
         else:
-            QUANT_DET_B_PATH = opts['black_detector_top']
-            QUANT_DET_W_PATH = opts['white_detector_top']
+            QUANT_DET_PATHS = opts['detector_top']
 
         # Import the detection networks.
-        det_black = ImportGraphDetection(QUANT_DET_B_PATH)
-        det_white = ImportGraphDetection(QUANT_DET_W_PATH)
+        detectors = []
+        for i,p in enumerate(QUANT_DET_PATHS):
+            detectors.append(ImportGraphDetection(p))
 
-        return det_black, det_white
+        return detectors
 
 def run_det_inner(input_data, det_model, opts):
     """ run_det_inner: the real work of running detection, per video frame """
@@ -479,7 +478,7 @@ def run_det(q_in,q_out, view, opts):
     q_out: to post-det, the detection post-processing function."""
     try:
         # Decide on which view to use.
-        det_black, det_white = run_det_setup(view, opts)
+        detectors = run_det_setup(view, opts)
 
         while True:
             # Get the input image.
@@ -489,21 +488,21 @@ def run_det(q_in,q_out, view, opts):
             if input_data == POISON_PILL:
                 q_out.put(POISON_PILL)
                 return
-
-            det_b = run_det_inner(input_data, det_black, opts)
-            det_w = run_det_inner(input_data, det_white, opts)
+            det_out = []
+            for d in detectors:
+                det_out.append(run_det_inner(input_data, d, opts))
             # Send the output to the post-detection processing worker.
-            q_out.put([det_b, det_w])
+            q_out.put(det_out)
     except Exception as e:
         print("\nerror occurred during detection (function MARS_pose_machinery.run_det)")
         print(e)
         q_out.put(POISON_PILL)
         raise e
 
-max_mice = 20 # can be increased as desired, but damn what experiment are you running?
 
 def post_det_setup():
     # Initialize the bounding boxes for each animal.
+    max_mice = 99  # can be increased as desired, but damn what experiment are you running?
     det_prev_ok_loc = [np.array([1e-2, 1e-2, 2e-2, 2e-2])]*max_mice
     det_prev_ok_conf = [0.0001]*max_mice
     return det_prev_ok_loc, det_prev_ok_conf
@@ -514,8 +513,8 @@ def post_det_inner(det_input, det_prev_ok_loc, det_prev_ok_conf):
 
     # Unpack the detection output.
     num_mice = len(det_input)
-    det_bbox=[None]*num_mice
-    det_conf=[None]*num_mice
+    det_bbox = [None]*num_mice
+    det_conf = [None]*num_mice
     for count, mouse in enumerate(det_input):
         # Post-process the detection for each mouse
         locations, confidences = mouse

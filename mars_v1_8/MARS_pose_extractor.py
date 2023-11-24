@@ -205,7 +205,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                     process_time = [0.] * 10
                     process_time_start = time.perf_counter()
 
-                det_black, det_white = run_det_setup(view, mars_opts)
+                detectors = run_det_setup(view, mars_opts)
                 det_prev_ok_loc, det_prev_ok_conf = post_det_setup()
                 pose_model = run_hm_setup(view, mars_opts)
                 top_pose_frames, bar = post_hm_setup(NUM_FRAMES)
@@ -216,8 +216,7 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
 
                 BATCH_SIZE = 16
                 in_q = [None] * BATCH_SIZE
-                det_b_q = [None] * BATCH_SIZE
-                det_w_q = [None] * BATCH_SIZE
+                det_out = [[None] * BATCH_SIZE for d in detectors]
                 pose_image_q = [None] * BATCH_SIZE
                 # """
 
@@ -246,15 +245,12 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                             process_time_1 = time.perf_counter()
                             process_time[9] += process_time_1 - process_time_1a
 
-                    for ix in range(batch_end - batch_start):
-                        det_b_q[ix] = run_det_inner(in_q[ix], det_black, mars_opts)
-
-                    if time_steps:
-                        process_time_2 = time.perf_counter()
-                        process_time[2] += process_time_2 - process_time_1
-
-                    for ix in range(batch_end - batch_start):
-                        det_w_q[ix] = run_det_inner(in_q[ix], det_white, mars_opts)
+                    for i,d in enumerate(detectors):
+                        for ix in range(batch_end - batch_start):
+                            det_out[i][ix] = run_det_inner(in_q[ix], d, mars_opts)
+                        if time_steps:
+                            process_time_2 = time.perf_counter()
+                            process_time[2] += process_time_2 - process_time_1
 
                     if time_steps:
                         process_time_3 = time.perf_counter()
@@ -264,13 +260,13 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                         if time_steps:
                             process_time_start_1 = time.perf_counter()
                         
-                        det_out = post_det_inner([det_b_q[ix], det_w_q[ix]], det_prev_ok_loc, det_prev_ok_conf)
+                        det_out_post = post_det_inner([d[ix] for d in det_out], det_prev_ok_loc, det_prev_ok_conf)
 
                         if time_steps:
                             process_time_4 = time.perf_counter()
                             process_time[4] += process_time_4 - process_time_start_1
                         
-                        prepped_images, bboxes_confs = pre_hm_inner(det_out, pose_image_q[ix], IM_W, IM_H)
+                        prepped_images, bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
 
                         if time_steps:
                             process_time_5 = time.perf_counter()

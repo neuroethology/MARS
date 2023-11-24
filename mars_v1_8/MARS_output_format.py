@@ -55,9 +55,9 @@ def get_names(video_name, pair_files=False):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
     elif mouse_name == os.path.splitext(video_name)[0]:
-    	ext = os.path.splitext(video_name)[1]
-    	top_ending = ext
-    	front_ending = ext
+        ext = os.path.splitext(video_name)[1]
+        top_ending = ext
+        front_ending = ext
     else:
         ext = os.path.splitext(video_name)[1]
         top_ending = '_Top'+ext
@@ -152,7 +152,7 @@ def get_feat_no_ext(opts, video_fullpath='', view='top', output_folder='', outpu
     output_plus_mouse = os.path.join(output_folder, mouse_name)
 
     feat_basenames = {}
-    classifier_path = opts['classifier_model']
+    classifier_path = opts['classifiers']
     models = get_classifier_list(classifier_path)
     if 'classify_behaviors' not in opts.keys():
         opts['classify_behaviors'] = ['DUMMY_PLUG']

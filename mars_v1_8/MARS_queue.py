@@ -25,9 +25,9 @@ def parse_opts(user_input):
 
     # populate list of behaviors to classify if not provided or empty
     if 'classify_behaviors' not in opts.keys() or not opts['classify_behaviors']:
-        if not os.path.isdir(opts['classifier_model']):
-            raise ValueError('classifier_model ' + opts['classifier_model'] + 'is not a directory')
-        classifier_list = mof.get_classifier_list(opts['classifier_model'])
+        if not os.path.isdir(opts['classifiers']):
+            raise ValueError('classifiers ' + opts['classifiers'] + 'is not a directory')
+        classifier_list = mof.get_classifier_list(opts['classifiers'])
         behavior_list = [os.path.basename(x).replace('classifier_', '') for x in classifier_list]
         opts['classify_behaviors'] = behavior_list
 
@@ -168,7 +168,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         raise ValueError('ERROR: You must have a top-view camera to do feature extraction or behavior classification.')
                     send_update('   Extracting features from ' + top_fname + ' ... ', output_mode, gui_handle)
 
-                    classifier_path = mars_opts['classifier_model']
+                    classifier_path = mars_opts['classifiers']
                     mfe.extract_features_wrapper(opts=mars_opts,
                                                  video_fullpath=fullpath_to_top,
                                                  progress_bar_sig=gui_handle.update_progbar_sig,
@@ -183,7 +183,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                         raise ValueError('ERROR: You must have a top-view camera to do behavior classification.')
                     send_update('   Predicting actions from ' + top_fname + ' ... ', output_mode, gui_handle)
 
-                    classifier_path = mars_opts['classifier_model']
+                    classifier_path = mars_opts['classifiers']
                     mce.classify_actions_wrapper(opts=mars_opts,
                                                  top_video_fullpath=fullpath_to_top,
                                                  front_video_fullpath='',
@@ -197,7 +197,7 @@ def mars_queue_engine(queue, mars_opts, output_mode, gui_handle=dummyGui()):
                     mcm.dump_bento(video_fullpath=fullpath_to_top, basepath=root_path)
 
                 if mars_opts['doVideo']:
-                    classifier_path = mars_opts['classifier_model']
+                    classifier_path = mars_opts['classifiers']
 
                     send_update('   Creating results video for ' + top_fname + '...', output_mode, gui_handle)
                     mcv.create_video_results_wrapper(top_video_fullpath=fullpath_to_top,
