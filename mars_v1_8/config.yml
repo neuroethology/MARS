@@ -49,6 +49,9 @@ doOverwrite: True
 hasTopCamera: True
 hasFrontCamera: False
 
+# use multiprocessing to speed up inference; runs a different version of the code.
+multiprocessing: False
+
 # enable background-subtraction prior to mouse detection/pose estimation. This is an experimental feature, it might
 # help MARS to do a better job in arenas it hasn't seen before?
 bgSubtract: False
