@@ -9,15 +9,15 @@ classifiers: models/classifier
 
 # information about your videos. Set framerate=-1 to get the framerate value from the video file.
 pixels_per_cm: 1
-framerate: -1
+framerate: 30
 num_mice: 1
 
 # which stages of analysis to run- pose estimation, feature extraction, and behavior classification
 # feature extraction is a required step if you wish to do behavior classification, and
 # pose estimation is a required step if you wish to do feature extraction.
-doPose: False
-doFeats: True
-doActions: True
+doPose: True
+doFeats: False
+doActions: False
 
 # setting multichannelAnotations to true will output predictions of each binary classifier to a separate annotation
 # channel, allowing frames to potentially be labeled positive for more than one behavior.
@@ -27,7 +27,7 @@ multichannelAnnotations: True
 doVideo: False
 
 # overwrite any existing pose/feature/annotation files for a given video
-doOverwrite: False
+doOverwrite: True
 
 # cameras available for this experiment. This will determine which detection/pose model is used.
 # note, feature extraction and action classification require a top-view camera, and ignore the front-view camera:
