@@ -651,7 +651,7 @@ def run_hm(q_in_img, q_out_hm, view, opts):
             for p in pose_models:
                 predicted_heatmaps.append(run_hm_inner(prepped_images, p))
             predicted_heatmaps = [hm[0] for hm in predicted_heatmaps]
-            
+
             # Send the heatmaps out for post-processing.
             q_out_hm.put(predicted_heatmaps)
     except Exception as e:
