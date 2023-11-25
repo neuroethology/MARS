@@ -178,7 +178,6 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                        q_start_to_predet.put([img,bboxes[f]])
                        frcount+=1     
 
-		     
                 if frcount != NUM_FRAMES:
                     print('Only loaded ' + str(frcount) + ' out of ' + str(NUM_FRAMES) + ' expected frames')
 
