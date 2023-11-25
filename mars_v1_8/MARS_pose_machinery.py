@@ -8,6 +8,7 @@ import cv2
 import progressbar
 import platform
 from pathlib import Path
+import pdb
 
 import os, sys
 import pickle
@@ -636,7 +637,7 @@ def run_hm(q_in_img, q_out_hm, view, opts):
 
     q_out_hm: to post_hm, contains the heatmaps."""
     try:
-        pose_model = run_hm_setup(opts)
+        pose_models = run_hm_setup(opts)
         while True:
             # Collect the prepared images for inference.
             prepped_images = q_in_img.get()
@@ -646,8 +647,11 @@ def run_hm(q_in_img, q_out_hm, view, opts):
                 q_out_hm.put(POISON_PILL)
                 return
 
-            predicted_heatmaps = run_hm_inner(prepped_images, pose_model)
-
+            predicted_heatmaps=[]
+            for p in pose_models:
+                predicted_heatmaps.append(run_hm_inner(prepped_images, p))
+            predicted_heatmaps = [hm[0] for hm in predicted_heatmaps]
+            
             # Send the heatmaps out for post-processing.
             q_out_hm.put(predicted_heatmaps)
     except Exception as e:

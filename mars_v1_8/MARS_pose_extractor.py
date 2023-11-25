@@ -218,6 +218,8 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 in_q = [None] * BATCH_SIZE
                 det_out = [[None] * BATCH_SIZE for d in detectors]
                 pose_image_q = [None] * BATCH_SIZE
+                prepped_images = [None] * BATCH_SIZE
+                bboxes_confs = [None] * BATCH_SIZE
                 # """
 
                     # """
@@ -245,36 +247,41 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                             process_time_1 = time.perf_counter()
                             process_time[9] += process_time_1 - process_time_1a
 
-                    for i, d, p in enumerate(zip(detectors, pose_models)):
+                    for i, d in enumerate(detectors):
                         for ix in range(batch_end - batch_start):
                             det_out[i][ix] = run_det_inner(in_q[ix], d, mars_opts)
                         if time_steps:
                             process_time_2 = time.perf_counter()
                             process_time[2] += process_time_2 - process_time_1
 
-                        for ix in range(batch_end - batch_start):
-                            if time_steps:
-                                process_time_start_1 = time.perf_counter()
+                    for ix in range(batch_end - batch_start):
+                        if time_steps:
+                            process_time_start_1 = time.perf_counter()
 
-                            det_out_post = post_det_inner([d[ix] for d in det_out], det_prev_ok_loc, det_prev_ok_conf)
+                        # process the output of all detectors on this image
+                        det_out_post = post_det_inner([d[ix] for d in det_out], det_prev_ok_loc, det_prev_ok_conf)
 
-                            if time_steps:
-                                process_time_4 = time.perf_counter()
-                                process_time[4] += process_time_4 - process_time_start_1
+                        if time_steps:
+                            process_time_4 = time.perf_counter()
+                            process_time[4] += process_time_4 - process_time_start_1
 
-                            prepped_images, bboxes_confs = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
+                        # for each detector and each image, generate the cropped images
+                        prepped_images[ix], bboxes_confs[ix] = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
 
-                            if time_steps:
-                                process_time_5 = time.perf_counter()
-                                process_time[5] += process_time_5 - process_time_4
+                    if time_steps:
+                        process_time_5 = time.perf_counter()
+                        process_time[5] += process_time_5 - process_time_4
 
-                            predicted_heatmaps = run_hm_inner(prepped_images, p)
+                    predicted_heatmaps = [None]*len(pose_models)
+                    for i, p in enumerate(pose_models):
+                        predicted_heatmaps[i] = run_hm_inner([im[i, :, :, :] for im in prepped_images], p)
 
-                            if time_steps:
-                                process_time_6 = time.perf_counter()
-                                process_time[6] += process_time_6 - process_time_5
+                    if time_steps:
+                        process_time_6 = time.perf_counter()
+                        process_time[6] += process_time_6 - process_time_5
 
-                        post_hm_inner(predicted_heatmaps, bboxes_confs, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, pose_basename, top_pose_frames, bar, current_frame_num)
+                    for ix in range(batch_end - batch_start):
+                        post_hm_inner([[hm[0][ix] for hm in predicted_heatmaps]], bboxes_confs[ix], IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, pose_basename, top_pose_frames, bar, current_frame_num)
 
                         if time_steps:
                             process_time_7 = time.perf_counter()

@@ -16,10 +16,16 @@ all_models:
   - name: 'white mouse front'
     detection: 'models/detection/MARS_front_detection_white.pb'
     pose: 'models/pose/MARS_front_pose.pb'
+  - name: 'snacks'
+    detection: 'models/detection/asap_snacks_black_top_detector.pb'
+    pose: 'models/pose/asap_snacks_top_pose.pb'
+  - name: 'openfield'
+    detection: 'models/detection/open-all_black_top_detector.pb'
+    pose: 'models/pose/open-all_top_pose.pb'
 
 # which subjects to actually try to track in the current experiment:
 subjects:
-    - name: 'black mouse top'
+    - name: 'openfield'
       count: 1
 classifiers: models/classifier
 
@@ -50,7 +56,7 @@ hasTopCamera: True
 hasFrontCamera: False
 
 # use multiprocessing to speed up inference; runs a different version of the code.
-multiprocessing: False
+multiprocessing: True
 
 # enable background-subtraction prior to mouse detection/pose estimation. This is an experimental feature, it might
 # help MARS to do a better job in arenas it hasn't seen before?
