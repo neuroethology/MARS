@@ -501,10 +501,10 @@ def run_det(q_in,q_out, view, opts):
         q_out.put(POISON_PILL)
         raise e
 
+max_mice = 99  # can be increased as desired, but damn what experiment are you running?
 
 def post_det_setup():
     # Initialize the bounding boxes for each animal.
-    max_mice = 99  # can be increased as desired, but damn what experiment are you running?
     det_prev_ok_loc = [np.array([1e-2, 1e-2, 2e-2, 2e-2])]*max_mice
     det_prev_ok_conf = [0.0001]*max_mice
     return det_prev_ok_loc, det_prev_ok_conf
@@ -729,81 +729,3 @@ def post_hm(q_in_hm, q_in_bbox, IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, POSE_BASEN
         print(e)
         raise(e)
 
-def run_gpu(q_in_det, q_out_det, q_in_hm, q_out_hm, view, opts, queue_size):
-    do_det = True
-    do_hm = True
-    BATCH_SIZE = min(queue_size, 16)
-    print("\n\nIn run_gpu\n\n")
-    try:
-        # Decide on which view to use.
-        detectors = run_det_setup(opts) # TODO fix this function ##############################################################3
-        pose_model = run_hm_setup(opts)
-    except Exception as e:
-        print("\nError occurred during loading of models")
-        print(e)
-        q_out_det.put(POISON_PILL)
-        q_out_hm.put(POISON_PILL)
-        raise e
-
-    while do_det or do_hm:
-        if do_det:
-            for item in range(BATCH_SIZE):
-                try:
-                    # Get the input image.
-                    if q_in_det.empty():
-                        print("q_in_det is empty")
-                        break
-                    print('trying to get from q_in_det')
-                    input_data = q_in_det.get(False)
-                    print('got det')
-                except Exception as e:
-                    print(f'unexpected exception trying to get from q_in_det: {e}')
-                    raise e
-
-                # Check if we got the poison pill --if so, shut down.
-                if input_data == POISON_PILL:
-                    q_out.put(POISON_PILL)
-                    do_det = False
-                    break
-
-                try:
-                    det_b = run_det_inner(input_data, det_black, opts)
-                    det_w = run_det_inner(input_data, det_white, opts)
-                    # Send the output to the post-detection processing worker.
-                    q_out_det.put([det_b, det_w])
-                except Exception as e:
-                    print("\nerror occurred during detection (function MARS_pose_machinery.run_det)")
-                    print(e)
-                    q_out.put(POISON_PILL)
-                    raise e
-
-        if do_hm:
-            for item in range(BATCH_SIZE):
-                try:
-                    # Collect the prepared images for inference.
-                    if q_in_hm.empty(): # only a hint
-                        print("q_in_hm is empty")
-                        break
-                    print('trying to get from q_in_hm')
-                    prepped_images = q_in_hm.get()
-                    print('got hm')
-                except Exception as e:
-                    print(f"unexpected exception trying to get from q_in_hm: {e}")
-                    raise e
-
-                # Check if we got the poison pill --if so, shut down.
-                if prepped_images == POISON_PILL:
-                    q_out_hm.put(POISON_PILL)
-                    do_hm = False
-                    break
-
-                try:
-                    predicted_heatmaps = run_hm_inner(prepped_images, pose_model)
-
-                    # Send the heatmaps out for post-processing.
-                    q_out_hm.put(predicted_heatmaps)
-                except Exception as e:
-                    print("\nerror occurred during pose estimation (function MARS_pose_machinery.run_hm)")
-                    print(e)
-                    raise(e)
-    return
