@@ -48,6 +48,9 @@ def classify_actions_wrapper(opts, top_video_fullpath, front_video_fullpath, doO
         front_feats_exist = []
         front_feat_names = {}
         for behavior in top_feat_dict.keys():
+            if behavior is 'DUMMY_PLUG':
+                print('no behavior classifiers found in ' + classifier_path)
+                return
             model_name = mof.get_most_recent(classifier_path, clf_models, behavior)
             clf = joblib.load(os.path.join(classifier_path, model_name))
             top_feat_basename = top_feat_dict[behavior]['path']
