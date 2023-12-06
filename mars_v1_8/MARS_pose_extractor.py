@@ -194,15 +194,10 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 top_pose_frames = results_posthm.get()
     
             else:   # don't use multiprocessing, but process frames in batches
-                time_steps = True
 
                 if progress_bar_signal:
                     # Update the progress bar with the number of total frames it will be processing.
                     progress_bar_signal.emit(0, NUM_FRAMES)
-
-                if time_steps:
-                    process_time = [0.] * 10
-                    process_time_start = time.perf_counter()
 
                 detectors = run_det_setup(mars_opts)
                 det_prev_ok_loc, det_prev_ok_conf = post_det_setup()
@@ -210,105 +205,47 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                 top_pose_frames, bar = post_hm_setup(NUM_FRAMES)
                 current_frame_num = 0
 
-                if time_steps:
-                    process_time[0] += time.perf_counter() - process_time_start
-
                 BATCH_SIZE = 16
                 in_q = [None] * BATCH_SIZE
                 det_out = [[None] * BATCH_SIZE for d in detectors]
                 pose_image_q = [None] * BATCH_SIZE
                 prepped_images = [None] * BATCH_SIZE
                 bboxes_confs = [None] * BATCH_SIZE
-                # """
 
-                    # """
                 for batch in range((NUM_FRAMES + BATCH_SIZE - 1) // BATCH_SIZE):
                     batch_start = batch * BATCH_SIZE
                     batch_end = min(batch_start + BATCH_SIZE, NUM_FRAMES)
                     
-                    if time_steps:
-                        process_time_start = time.perf_counter()
-                    
                     for f in range(batch_start, batch_end):
-                        if time_steps:
-                            process_time_start_0 = time.perf_counter()
-
                         ix = f - batch_start
                         img = reader.getFrame(f)
 
-                        if time_steps:
-                            process_time_1a = time.perf_counter()
-                            process_time[1] += process_time_1a - process_time_start_0
-
                         in_q[ix], pose_image_q[ix] = pre_det_inner([img, bboxes[f]], medianFrame, IM_H, IM_W)
-
-                        if time_steps:
-                            process_time_1 = time.perf_counter()
-                            process_time[9] += process_time_1 - process_time_1a
 
                     for i, d in enumerate(detectors):
                         for ix in range(batch_end - batch_start):
                             det_out[i][ix] = run_det_inner(in_q[ix], d, mars_opts)
-                        if time_steps:
-                            process_time_2 = time.perf_counter()
-                            process_time[2] += process_time_2 - process_time_1
 
                     for ix in range(batch_end - batch_start):
-                        if time_steps:
-                            process_time_start_1 = time.perf_counter()
 
                         # process the output of all detectors on this image
                         det_out_post = post_det_inner([d[ix] for d in det_out], det_prev_ok_loc, det_prev_ok_conf)
 
-                        if time_steps:
-                            process_time_4 = time.perf_counter()
-                            process_time[4] += process_time_4 - process_time_start_1
-
                         # for each detector and each image, generate the cropped images
                         prepped_images[ix], bboxes_confs[ix] = pre_hm_inner(det_out_post, pose_image_q[ix], IM_W, IM_H)
-
-                    if time_steps:
-                        process_time_5 = time.perf_counter()
-                        process_time[5] += process_time_5 - process_time_4
 
                     predicted_heatmaps = [None]*len(pose_models)
                     for i, p in enumerate(pose_models):
                         predicted_heatmaps[i] = run_hm_inner([im[i, :, :, :] for im in prepped_images], p)
 
-                    if time_steps:
-                        process_time_6 = time.perf_counter()
-                        process_time[6] += process_time_6 - process_time_5
-
                     for ix in range(batch_end - batch_start):
                         post_hm_inner([[hm[0][ix] for hm in predicted_heatmaps]], bboxes_confs[ix], IM_W, IM_H, POSE_IM_SIZE, NUM_FRAMES, pose_basename, top_pose_frames, bar, current_frame_num)
-
-                        if time_steps:
-                            process_time_7 = time.perf_counter()
-                            process_time[7] += process_time_7 - process_time_6
 
                         # Increment the frame_number.
                         current_frame_num += 1
 
-                    if time_steps:
-                        process_time[8] += process_time_7 - process_time_start
-
                     if progress_bar_signal:
                         progress_bar_signal.emit(f, 0)
-            
-                if time_steps:
-                    NS_PER_SECOND = 1000000000
-                    print("Process Times")
-                    print("-----------------------------")
-                    print(f"Setup             : {process_time[0]} sec\n")
-                    print(f"File Read         : {process_time[1] / NUM_FRAMES} sec / frame")
-                    print(f"Pre Detection     : {process_time[9] / NUM_FRAMES} sec / frame")
-                    print(f"Detection (black) : {process_time[2] / NUM_FRAMES} sec / frame")
-                    print(f"Detection (white) : {process_time[3] / NUM_FRAMES} sec / frame")
-                    print(f"Post Detection    : {process_time[4] / NUM_FRAMES} sec / frame")
-                    print(f"Pre Heatmap       : {process_time[5] / NUM_FRAMES} sec / frame")
-                    print(f"Heatmap (pose)    : {process_time[6] / NUM_FRAMES} sec / frame")
-                    print(f"Post Heatmap      : {process_time[7] / NUM_FRAMES} sec / frame")
-                    print(f"Total processing  : {process_time[8] / NUM_FRAMES} sec / frame")
 
             top_pose_frames['keypoints'] = np.array(top_pose_frames['keypoints'])
             top_pose_frames['scores'] = np.array(top_pose_frames['scores'])
