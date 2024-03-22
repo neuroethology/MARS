@@ -19,7 +19,6 @@ import MARS_output_format as mof
 from util.genericVideo import *
 from MARS_detection_unpackers import *
 
-
 def extract_pose_wrapper(video_fullpath, view, doOverwrite, progress_bar_signal='',
     verbose=0, output_suffix='', mars_opts={}, max_frames=999999):
     video_path = os.path.dirname(video_fullpath)
@@ -170,9 +169,14 @@ def extract_pose(video_fullpath, output_folder, output_suffix, view,
                     # Update the progress bar with the number of total frames it will be processing.
                     progress_bar_signal.emit(0, NUM_FRAMES)
 
+                frcount=0
                 for f in range(NUM_FRAMES):
                     img = reader.getFrame(f)
-                    q_start_to_predet.put([img,bboxes[f]])
+                    if img is not None:
+                        q_start_to_predet.put([img,bboxes[f]])
+                        frcount+=1
+                if frcount != NUM_FRAMES:
+                    print('Only loaded ' + str(frcount) + ' out of ' + str(NUM_FRAMES) + ' expected frames')
 
                 # Push through the poison pill.
                 q_start_to_predet.put(get_poison_pill())

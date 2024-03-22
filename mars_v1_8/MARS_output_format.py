@@ -21,7 +21,9 @@ def get_names(video_name):
         mouse_name = video_name[:-10]
     elif ('FroHi.seq' in video_name):
         mouse_name = video_name[:-10]
-    else: return '', '', ''
+    else: 
+        mouse_name = os.path.splitext(video_name)[0]
+    # return '', '', ''
 
     # Find the ending suffix for each video.
     if 'J85' in video_name:
@@ -39,6 +41,10 @@ def get_names(video_name):
     elif any(x in video_name for x in ['_s.seq','_t.seq']):
         top_ending = '_t.seq'
         front_ending = '_s.seq'
+    elif mouse_name == os.path.splitext(video_name)[0]:
+    	ext = os.path.splitext(video_name)[1]
+    	top_ending = ext
+    	front_ending = ext
     else:
         ext = os.path.splitext(video_name)[1]
         top_ending = '_Top'+ext

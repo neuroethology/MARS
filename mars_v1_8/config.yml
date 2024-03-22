@@ -3,10 +3,10 @@
 # relative paths to the models used for detection and pose estimation.
 black_detector_front: models/detection/MARS_front_detection_black.pb
 white_detector_front: models/detection/MARS_front_detection_white.pb
-black_detector_top: models/detection/MARS_top_detection_black.pb
-white_detector_top: models/detection/MARS_top_detection_white.pb
+black_detector_top: models/detection/tracking_example_black_top_detector.pb
+white_detector_top: models/detection/tracking_example_white_top_detector.pb
 front_pose_model: models/pose/MARS_front_pose.pb
-top_pose_model: models/pose/MARS_top_pose.pb
+top_pose_model: models/pose/tracking_example_top_pose.pb
 classifier_model: models/classifier/top_xgb_wnd
 classifier_pcf_model: models/classifier/top_pcf_xgb_wnd
 
@@ -15,7 +15,7 @@ classifier_pcf_model: models/classifier/top_pcf_xgb_wnd
 # pose estimation is a required step if you wish to do feature extraction.
 doPose: True
 doFeats: True
-doActions: True
+doActions: False
 
 # enable to have MARS save a video of the resulting pose estimation
 doVideo: False
