@@ -49,7 +49,7 @@ sudo docker image build -t mars-docker .
 ## Start the MARS container
 This will be done once per session, and uses the MARS-docker image to start a container (an instantiation of an image) within which you can run MARS. Enter the  command:
   ```
-  sudo docker run --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix-v /media:/media -p 8888:8888 -dit --name MARS mars-docker bash
+  sudo docker run --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /media:/media -p 8888:8888 -dit --name MARS mars-docker bash
   ```
   A breakdown of this command:
   - `docker run mars-docker` starts a container from the mars-docker image you just built.
